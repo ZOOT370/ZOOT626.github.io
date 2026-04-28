@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-    <title>DeepSeek AI - 人民币计费</title>
+    <title>DeepSeek 专业助手 - 人民币计费</title>
     <style>
         * {
             margin: 0;
@@ -28,7 +28,6 @@
             background: white;
         }
 
-        /* 导航栏 */
         .navbar {
             background: rgba(255, 255, 255, 0.96);
             backdrop-filter: blur(10px);
@@ -69,7 +68,6 @@
             background: #f1f5f9;
         }
 
-        /* 聊天区域 */
         .chat-container {
             flex: 1;
             overflow-y: auto;
@@ -101,7 +99,6 @@
             font-size: 15px;
             line-height: 1.45;
             word-break: break-word;
-            position: relative;
         }
 
         .user-message .message-bubble {
@@ -147,7 +144,6 @@
             background: #e2e8f0;
         }
 
-        /* 输入区域 */
         .input-area {
             padding: 12px 16px;
             background: white;
@@ -201,7 +197,6 @@
             pointer-events: none;
         }
 
-        /* 模态框 */
         .modal {
             position: fixed;
             top: 0;
@@ -280,7 +275,6 @@
             padding: 40px;
         }
 
-        /* API设置面板 */
         .settings-panel {
             position: fixed;
             top: 0;
@@ -348,17 +342,6 @@
             from { transform: translateY(100%); }
             to { transform: translateY(0); }
         }
-
-        .edit-input {
-            width: 100%;
-            background: rgba(0,0,0,0.05);
-            border: none;
-            padding: 8px;
-            border-radius: 16px;
-            font-family: inherit;
-            font-size: 15px;
-            outline: none;
-        }
     </style>
 </head>
 <body>
@@ -384,7 +367,6 @@
     </div>
 </div>
 
-<!-- 会话列表模态框 -->
 <div id="sessionModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
@@ -395,7 +377,6 @@
     </div>
 </div>
 
-<!-- API设置面板 -->
 <div id="settingsModal" class="settings-panel">
     <div class="settings-card">
         <h3 style="margin-bottom:12px;">DeepSeek API Key</h3>
@@ -406,19 +387,25 @@
 </div>
 
 <script>
-    // ================= 模型和价格配置（人民币）=================
-    const MODEL = "deepseek-chat";          // 可改为 deepseek-v4-pro
-    const USD_TO_CNY = 7.2;                 // 固定汇率 1美元 = 7.2元人民币
-    const PRICE_INPUT_PER_M_USD = 0.14;      // 输入 0.14 USD / 1M tokens
-    const PRICE_OUTPUT_PER_M_USD = 0.28;     // 输出 0.28 USD / 1M tokens
-    // 转换为人民币每百万tokens
+    // ======================== 请在此处填入您的 API Key ========================
+    // ★★★★★ 重要：如果您想直接在代码中预设密钥（仅限私有仓库），请将下面的空字符串替换为您的 sk-xxx ★★★★★
+    // 例如: const DEFAULT_API_KEY = "sk-abc123def456...";
+    // 如果留空，则每次都需要通过右上角 ⚙️ 手动输入。
+    const DEFAULT_API_KEY = "sk-8de88b623c7f4317bf58caba1f85d895";   // <------------ 在这里填入您的 API Key
+    // =========================================================================
+
+    // 模型与价格配置（人民币）
+    const MODEL = "deepseek-chat";
+    const USD_TO_CNY = 7.2;
+    const PRICE_INPUT_PER_M_USD = 0.14;
+    const PRICE_OUTPUT_PER_M_USD = 0.28;
     const PRICE_INPUT_PER_M_CNY = PRICE_INPUT_PER_M_USD * USD_TO_CNY;
     const PRICE_OUTPUT_PER_M_CNY = PRICE_OUTPUT_PER_M_USD * USD_TO_CNY;
 
-    // ---------- 全局状态 ----------
-    let sessions = [];           // { id, name, messages, updatedAt }
+    // 全局状态
+    let sessions = [];
     let currentSessionId = null;
-    let isWaiting = false;       // 等待API响应
+    let isWaiting = false;
 
     // DOM 元素
     const chatContainer = document.getElementById('chatContainer');
@@ -435,13 +422,12 @@
     const saveApiKeyBtn = document.getElementById('saveApiKeyBtn');
     const apiKeyInput = document.getElementById('apiKeyInput');
 
-    // ---------- 辅助函数 ----------
+    // 辅助函数
     function formatDate(timestamp) {
         const date = new Date(timestamp);
         return `${date.getMonth()+1}/${date.getDate()} ${date.getHours().toString().padStart(2,'0')}:${date.getMinutes().toString().padStart(2,'0')}`;
     }
 
-    // 计算费用（人民币）
     function calculateCostCNY(usage) {
         if (!usage) return 0;
         const inputCost = (usage.prompt_tokens / 1_000_000) * PRICE_INPUT_PER_M_CNY;
@@ -449,23 +435,26 @@
         return inputCost + outputCost;
     }
 
-    // 保存所有会话到 localStorage
     function saveSessions() {
         localStorage.setItem('deepseek_sessions', JSON.stringify(sessions));
         localStorage.setItem('currentSessionId', currentSessionId);
-    }
-
-    // 加载API Key
-    function loadApiKey() {
-        const key =sk-57d321764a9f486daa8659be78886f3f;
-        if (key) apiKeyInput.value = key;
     }
 
     function saveApiKey(key) {
         localStorage.setItem('deepseek_api_key', key);
     }
 
-    // 加载会话
+    function loadApiKey() {
+        const savedKey = localStorage.getItem('deepseek_api_key');
+        if (savedKey) {
+            apiKeyInput.value = savedKey;
+        } else if (DEFAULT_API_KEY) {
+            // 如果定义了默认密钥且本地没有保存，则使用默认密钥并自动保存
+            apiKeyInput.value = DEFAULT_API_KEY;
+            saveApiKey(DEFAULT_API_KEY);
+        }
+    }
+
     function loadSessions() {
         const saved = localStorage.getItem('deepseek_sessions');
         if (saved) {
@@ -490,19 +479,16 @@
         renderCurrentChat();
     }
 
-    // 获取当前会话
     function currentSession() {
         return sessions.find(s => s.id === currentSessionId);
     }
 
-    // 重新生成某条助手消息（找到该消息索引，移除它及之后所有消息，重新调用API）
     async function regenerateMessage(assistantIdx) {
         const session = currentSession();
         if (!session) return;
         if (assistantIdx >= session.messages.length) return;
         if (session.messages[assistantIdx].role !== 'assistant') return;
 
-        // 获取这条助手消息之前的最后一条用户消息
         let lastUserMsgIndex = -1;
         for (let i = assistantIdx - 1; i >= 0; i--) {
             if (session.messages[i].role === 'user') {
@@ -513,16 +499,12 @@
         if (lastUserMsgIndex === -1) return;
 
         const userMsg = session.messages[lastUserMsgIndex];
-        // 截断：保留从开头到该用户消息（包括用户消息）
         session.messages = session.messages.slice(0, lastUserMsgIndex + 1);
         saveSessions();
         renderCurrentChat();
-
-        // 重新发送该用户消息
         await sendMessageToAPI(userMsg.content);
     }
 
-    // 修改用户消息并重新发送（弹出修改框）
     async function editUserMessage(msgIndex) {
         const session = currentSession();
         if (!session) return;
@@ -532,9 +514,7 @@
         const newContent = prompt("编辑你的消息:", oldMsg.content);
         if (!newContent || newContent.trim() === "") return;
 
-        // 截断到该用户消息之前，然后添加新的用户消息
         session.messages = session.messages.slice(0, msgIndex);
-        // 添加修改后的用户消息
         session.messages.push({
             role: 'user',
             content: newContent.trim(),
@@ -542,12 +522,9 @@
         });
         saveSessions();
         renderCurrentChat();
-
-        // 发送新的用户消息获取回复
         await sendMessageToAPI(newContent.trim());
     }
 
-    // 修改助手消息内容（直接编辑文本）
     async function editAssistantMessage(msgIndex) {
         const session = currentSession();
         if (!session) return;
@@ -556,14 +533,12 @@
 
         const newContent = prompt("编辑助手回复内容:", msg.content);
         if (newContent === null) return;
-        // 只更新文本，费用和时间戳保留
         msg.content = newContent.trim();
-        msg.timestamp = Date.now(); // 更新时间戳
+        msg.timestamp = Date.now();
         saveSessions();
         renderCurrentChat();
     }
 
-    // 发送消息到API并处理响应
     async function sendMessageToAPI(userMessage) {
         const apiKey = apiKeyInput.value.trim();
         if (!apiKey) {
@@ -578,7 +553,6 @@
         const session = currentSession();
         if (!session) return false;
 
-        // 接口请求体
         const messagesForAPI = session.messages.map(m => ({
             role: m.role,
             content: m.content
@@ -613,16 +587,14 @@
             const usage = data.usage;
             const costCNY = calculateCostCNY(usage);
 
-            // 添加助手回复到当前会话
             session.messages.push({
                 role: 'assistant',
                 content: assistantContent,
                 timestamp: Date.now(),
-                cost: costCNY,            // 保存人民币费用
+                cost: costCNY,
                 usage: usage
             });
             session.updatedAt = Date.now();
-            // 更新会话名称（使用第一条用户消息）
             if (session.messages.length >= 2 && session.name === '新对话') {
                 const firstUserMsg = session.messages.find(m => m.role === 'user');
                 if (firstUserMsg) {
@@ -636,7 +608,6 @@
         } catch (err) {
             console.error(err);
             alert("请求失败: " + err.message);
-            // 可选：添加错误消息
             session.messages.push({
                 role: 'assistant',
                 content: `❌ 错误: ${err.message}`,
@@ -652,7 +623,6 @@
         }
     }
 
-    // 发送新消息（由用户输入触发）
     async function sendMessage() {
         let text = messageInput.value.trim();
         if (!text) return;
@@ -668,12 +638,10 @@
 
         let session = currentSession();
         if (!session) {
-            // 如果没有会话，自动创建
             createNewSession();
             session = currentSession();
         }
 
-        // 添加用户消息
         session.messages.push({
             role: 'user',
             content: text,
@@ -685,11 +653,9 @@
         messageInput.value = '';
         scrollToBottom();
 
-        // 调用API
         await sendMessageToAPI(text);
     }
 
-    // 新建对话
     function createNewSession() {
         const newId = Date.now().toString();
         const newSession = {
@@ -705,7 +671,6 @@
         closeModal();
     }
 
-    // 删除对话（整个会话）
     function deleteSession(sessionId) {
         if (sessions.length === 1) {
             if (confirm("删除最后一个对话会新建一个空对话，确定吗？")) {
@@ -720,10 +685,9 @@
         }
         saveSessions();
         renderCurrentChat();
-        renderSessionList(); // 刷新侧边栏
+        renderSessionList();
     }
 
-    // 切换对话
     function switchSession(sessionId) {
         currentSessionId = sessionId;
         saveSessions();
@@ -731,7 +695,6 @@
         closeModal();
     }
 
-    // 渲染聊天界面
     function renderCurrentChat() {
         const session = currentSession();
         if (!session) {
@@ -763,7 +726,6 @@
             dateSpan.innerText = formatDate(msg.timestamp);
             footer.appendChild(dateSpan);
 
-            // 助手消息显示费用（人民币）
             if (msg.role === 'assistant' && msg.cost !== undefined && msg.cost > 0) {
                 const costSpan = document.createElement('span');
                 costSpan.className = 'cost-badge';
@@ -771,7 +733,6 @@
                 footer.appendChild(costSpan);
             }
 
-            // 操作按钮区域
             const actionsDiv = document.createElement('div');
             actionsDiv.className = 'message-actions';
 
@@ -810,7 +771,6 @@
         scrollToBottom();
     }
 
-    // 渲染会话列表（侧边栏）
     function renderSessionList() {
         if (!sessionListDiv) return;
         if (sessions.length === 0) {
@@ -868,7 +828,6 @@
         sessionModal.classList.add('show');
     }
 
-    // 初始化事件监听
     function init() {
         loadApiKey();
         loadSessions();
