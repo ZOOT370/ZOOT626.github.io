@@ -2,346 +2,340 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>DeepSeek AI 助手 - 完整版</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
+    <title>DeepSeek 智能助理 · 时间胶囊</title>
     <style>
         * {
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
+
         body {
             font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background: #f5f7fb;
+            background: #f1f5f9;
             margin: 0;
             padding: 0;
             height: 100vh;
             display: flex;
             overflow: hidden;
         }
-        /* 侧边栏 */
+
+        /* 侧边栏 (会话管理) */
         .sidebar {
             width: 280px;
-            background: #1e293b;
+            background: #0f172a;
             color: #e2e8f0;
             display: flex;
             flex-direction: column;
-            transition: transform 0.3s ease;
-            border-right: 1px solid #334155;
+            transition: transform 0.25s ease;
+            border-right: 1px solid #1e293b;
+            z-index: 20;
         }
+
         .sidebar-header {
-            padding: 16px;
-            border-bottom: 1px solid #334155;
+            padding: 18px 16px;
+            border-bottom: 1px solid #1e293b;
         }
+
         .new-session-btn {
             width: 100%;
             background: #3b82f6;
             color: white;
             border: none;
-            border-radius: 12px;
+            border-radius: 40px;
             padding: 12px;
-            font-size: 0.9rem;
             font-weight: 600;
+            font-size: 0.9rem;
             cursor: pointer;
-            margin-bottom: 12px;
-        }
-        .search-box {
-            width: 100%;
-            padding: 10px 12px;
-            border: none;
-            border-radius: 12px;
-            background: #334155;
-            color: white;
-            font-size: 0.85rem;
-            outline: none;
-        }
-        .search-box::placeholder {
-            color: #94a3b8;
-        }
-        .sync-option {
+            transition: 0.2s;
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 8px;
-            margin-top: 12px;
-            font-size: 0.75rem;
-            color: #94a3b8;
         }
-        .sync-option input {
-            width: 16px;
-            height: 16px;
+
+        .new-session-btn:active {
+            transform: scale(0.97);
+            background: #2563eb;
         }
+
         .sessions-list {
             flex: 1;
             overflow-y: auto;
             padding: 12px;
         }
+
         .session-item {
-            padding: 12px;
-            border-radius: 12px;
+            padding: 12px 14px;
+            border-radius: 16px;
             margin-bottom: 8px;
             cursor: pointer;
+            transition: 0.2s;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: #334155;
+            background: #1e293b;
         }
+
         .session-item.active {
             background: #3b82f6;
         }
+
         .session-title {
             flex: 1;
             font-size: 0.85rem;
+            font-weight: 500;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
+
         .delete-session-btn {
-            background: none;
+            background: rgba(0,0,0,0.3);
             border: none;
-            color: #94a3b8;
+            color: #cbd5e1;
             cursor: pointer;
             font-size: 1rem;
-            padding: 4px 8px;
+            border-radius: 30px;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        /* 主聊天区域 */
+
+        /* 主聊天区 */
         .main-chat {
             flex: 1;
             display: flex;
             flex-direction: column;
-            background: #f8fafc;
+            background: #ffffff;
         }
+
         .chat-header {
+            background: white;
+            padding: 14px 20px;
+            border-bottom: 1px solid #e9eef3;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 12px 20px;
-            background: white;
-            border-bottom: 1px solid #e2e8f0;
+            backdrop-filter: blur(10px);
         }
+
         .menu-toggle {
             display: none;
             background: none;
             border: none;
-            font-size: 1.5rem;
+            font-size: 1.6rem;
             cursor: pointer;
-            padding: 8px;
+            padding: 4px 10px;
         }
-        h1 {
-            font-size: 1.25rem;
+
+        #current-session-title {
+            font-size: 1.2rem;
             font-weight: 600;
             margin: 0;
+            background: #f1f5f9;
+            padding: 6px 16px;
+            border-radius: 40px;
         }
-        .cost-badge {
-            background: #e2e8f0;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 0.7rem;
-            color: #475569;
-        }
+
         .session-actions {
             display: flex;
-            gap: 8px;
+            gap: 10px;
         }
+
         .action-icon {
-            background: none;
+            background: #f1f5f9;
             border: none;
             font-size: 1.2rem;
+            border-radius: 30px;
+            padding: 6px 12px;
             cursor: pointer;
-            padding: 6px 10px;
-            border-radius: 8px;
         }
+
+        /* 消息区域 */
         #messages {
             flex: 1;
             overflow-y: auto;
-            padding: 20px;
+            padding: 24px 20px;
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 18px;
             scroll-behavior: smooth;
         }
-        /* 日期分隔线 */
-        .date-divider {
-            text-align: center;
-            margin: 16px 0;
-            position: relative;
-            font-size: 0.75rem;
-            color: #94a3b8;
-        }
-        .date-divider span {
-            background: #f8fafc;
-            padding: 4px 12px;
-            border-radius: 20px;
-            display: inline-block;
-        }
-        /* 消息容器 */
+
+        /* 消息卡片 */
         .message-wrapper {
             display: flex;
             flex-direction: column;
-            max-width: 80%;
+            max-width: 85%;
+            position: relative;
         }
+
         .user-wrapper {
             align-self: flex-end;
         }
+
         .ai-wrapper {
             align-self: flex-start;
         }
+
         .message {
-            padding: 12px 16px;
-            border-radius: 20px;
+            padding: 12px 18px;
+            border-radius: 26px;
             line-height: 1.5;
             word-wrap: break-word;
             white-space: pre-wrap;
             word-break: break-word;
             font-size: 0.95rem;
             position: relative;
+            transition: all 0.1s;
         }
+
         .user-message {
             background: #3b82f6;
             color: white;
-            border-bottom-right-radius: 4px;
+            border-bottom-right-radius: 6px;
         }
+
         .ai-message {
-            background: white;
-            border: 1px solid #e2e8f0;
-            border-bottom-left-radius: 4px;
-            color: #0f172a;
-        }
-        .message-time {
-            font-size: 0.65rem;
-            color: #94a3b8;
-            margin-top: 4px;
-            margin-left: 8px;
-            margin-right: 8px;
-        }
-        .user-wrapper .message-time {
-            text-align: right;
-        }
-        .message-actions {
-            position: absolute;
-            bottom: -30px;
-            right: 0;
-            display: none;
-            gap: 6px;
-            background: white;
-            padding: 4px 8px;
-            border-radius: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            z-index: 10;
-        }
-        .message:hover .message-actions {
-            display: flex;
-        }
-        .msg-action-btn {
-            background: none;
-            border: none;
-            font-size: 0.85rem;
-            padding: 4px 8px;
-            border-radius: 16px;
-            cursor: pointer;
-            color: #64748b;
-        }
-        .loading {
-            font-style: italic;
-            color: #64748b;
             background: #f1f5f9;
+            color: #0f172a;
+            border-bottom-left-radius: 6px;
+            border: 1px solid #e2e8f0;
         }
-        .input-area {
-            padding: 16px 20px;
-            border-top: 1px solid #e2e8f0;
+
+        .message-time {
+            font-size: 0.7rem;
+            margin-top: 6px;
+            margin-left: 12px;
+            margin-right: 12px;
+            color: #94a3b8;
             display: flex;
             gap: 12px;
-            background: white;
+            align-items: center;
         }
+
+        .user-wrapper .message-time {
+            justify-content: flex-end;
+        }
+
+        /* 悬浮操作栏 */
+        .msg-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 6px;
+            justify-content: flex-end;
+            opacity: 0;
+            transition: 0.1s;
+        }
+
+        .message-wrapper:hover .msg-actions {
+            opacity: 1;
+        }
+
+        .msg-btn {
+            background: #eef2ff;
+            border: none;
+            font-size: 0.75rem;
+            padding: 4px 12px;
+            border-radius: 30px;
+            cursor: pointer;
+            color: #1e293b;
+            backdrop-filter: blur(4px);
+        }
+
+        .loading-bubble {
+            background: #f1f5f9;
+            padding: 12px 18px;
+            border-radius: 26px;
+            color: #475569;
+            font-style: italic;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* 底部输入 */
+        .input-area {
+            padding: 16px 20px 24px;
+            border-top: 1px solid #eef2ff;
+            background: white;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
         #user-input {
             flex: 1;
-            padding: 12px 18px;
-            border: 1px solid #cbd5e1;
-            border-radius: 40px;
+            padding: 14px 20px;
+            border: 1px solid #cbd5e6;
+            border-radius: 48px;
             font-size: 1rem;
             outline: none;
             font-family: inherit;
+            background: #ffffff;
         }
+
         #user-input:focus {
             border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.2);
         }
+
         #send-btn {
             background: #3b82f6;
             color: white;
             border: none;
-            border-radius: 40px;
-            padding: 0 24px;
+            border-radius: 48px;
+            padding: 12px 28px;
             font-weight: 600;
             cursor: pointer;
         }
-        button:disabled {
-            background: #94a3b8;
-            cursor: not-allowed;
-        }
-        .toast {
+
+        .toast-msg {
             position: fixed;
-            bottom: 80px;
+            bottom: 100px;
             left: 50%;
             transform: translateX(-50%);
-            background: #1e293b;
+            background: #0f172a;
             color: white;
-            padding: 8px 16px;
+            padding: 8px 18px;
             border-radius: 40px;
-            font-size: 0.85rem;
-            z-index: 1000;
-            animation: fadeOut 1.5s ease;
-        }
-        .search-results {
-            position: fixed;
-            top: 60px;
-            right: 20px;
-            width: 300px;
-            max-height: 400px;
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-            z-index: 200;
-            overflow: hidden;
-            display: none;
-        }
-        .search-results.show {
-            display: block;
-        }
-        .search-header {
-            padding: 12px;
-            background: #f1f5f9;
-            border-bottom: 1px solid #e2e8f0;
-            display: flex;
-            justify-content: space-between;
-        }
-        .search-results-list {
-            max-height: 350px;
-            overflow-y: auto;
-        }
-        .search-result-item {
-            padding: 10px 12px;
-            border-bottom: 1px solid #e2e8f0;
-            cursor: pointer;
             font-size: 0.8rem;
+            z-index: 1100;
+            pointer-events: none;
+            animation: fadeOut 2s ease forwards;
         }
-        .search-result-item:hover {
-            background: #f1f5f9;
-        }
-        .highlight {
-            background: #fef08a;
-            color: #1e293b;
-        }
+
         @keyframes fadeOut {
-            0% { opacity: 1; }
-            70% { opacity: 1; }
+            0% { opacity: 0; transform: translateX(-50%) translateY(10px); }
+            15% { opacity: 1; transform: translateX(-50%) translateY(0); }
+            85% { opacity: 1; transform: translateX(-50%) translateY(0); }
             100% { opacity: 0; visibility: hidden; }
         }
+
+        /* 编辑模式 */
+        .edit-textarea {
+            width: 100%;
+            font-family: inherit;
+            font-size: 0.95rem;
+            padding: 10px 14px;
+            border-radius: 20px;
+            border: 1px solid #3b82f6;
+            background: white;
+            resize: vertical;
+        }
+
         @media (max-width: 640px) {
             .sidebar {
                 position: fixed;
                 left: 0;
                 top: 0;
                 height: 100%;
-                z-index: 1000;
                 transform: translateX(-100%);
                 width: 260px;
+                z-index: 200;
             }
             .sidebar.open {
                 transform: translateX(0);
@@ -350,684 +344,493 @@
                 display: block;
             }
             .message-wrapper {
-                max-width: 90%;
+                max-width: 92%;
             }
-            .overlay {
+            .overlay-mobile {
                 display: none;
                 position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background: rgba(0,0,0,0.5);
-                z-index: 999;
+                inset: 0;
+                background: rgba(0,0,0,0.4);
+                z-index: 150;
             }
-            .overlay.open {
+            .overlay-mobile.open {
                 display: block;
-            }
-            .search-results {
-                width: 90%;
-                right: 5%;
-                left: 5%;
             }
         }
     </style>
 </head>
 <body>
-
-<div class="overlay" id="overlay"></div>
+<div class="overlay-mobile" id="mobileOverlay"></div>
 <div class="sidebar" id="sidebar">
     <div class="sidebar-header">
-        <button class="new-session-btn" id="new-session-btn">➕ 新建对话</button>
-        <input type="text" class="search-box" id="search-input" placeholder="🔍 搜索消息...">
-        <div class="sync-option">
-            <input type="checkbox" id="sync-toggle" checked>
-            <label>跨设备同步（关闭后各设备独立保存）</label>
-        </div>
+        <button class="new-session-btn" id="newSessionBtn">✨ 新对话</button>
     </div>
-    <div class="sessions-list" id="sessions-list"></div>
+    <div class="sessions-list" id="sessionsList"></div>
 </div>
 
 <div class="main-chat">
     <div class="chat-header">
-        <button class="menu-toggle" id="menu-toggle">☰</button>
-        <h1 id="current-session-title">新对话</h1>
-        <div class="cost-badge" id="cost-badge">💰 本次约0元</div>
+        <button class="menu-toggle" id="menuToggle">☰</button>
+        <div id="current-session-title">对话空间</div>
         <div class="session-actions">
-            <button class="action-icon" id="search-toggle-btn" title="搜索">🔍</button>
-            <button class="action-icon" id="clear-messages-btn" title="清空当前对话">🗑️</button>
+            <button class="action-icon" id="clearCurrentChatBtn" title="清空当前对话">🧹</button>
         </div>
     </div>
     <div id="messages"></div>
     <div class="input-area">
-        <input type="text" id="user-input" placeholder="输入你的问题..." autocomplete="off">
+        <input type="text" id="user-input" placeholder="输入消息… （支持修改指令）" autocomplete="off">
         <button id="send-btn">发送</button>
     </div>
 </div>
 
-<div class="search-results" id="search-results">
-    <div class="search-header">
-        <span>搜索结果</span>
-        <button id="close-search" style="background:none;border:none;cursor:pointer">✕</button>
-    </div>
-    <div class="search-results-list" id="search-results-list"></div>
-</div>
-
 <script>
-    const DEEPSEEK_API_KEY =sk-8de88b623c7f4317bf58caba1f85d895;  // 请替换为你的 API Key
+    // =============================================
+    // 🔐 API KEY 请在这里替换（我已经留空，您自行填写）
+    // =============================================
+    const DEEPSEEK_API_KEY =sk-5359398f9cb344919b03c3184a633685 '请在此处填入您的DeepSeek API Key';   // <--- 手动替换即可
     const API_URL = 'https://api.deepseek.com/chat/completions';
-    
-    // 限制历史轮数（1轮=1用户+1AI）
-    const MAX_HISTORY_ROUNDS = 15;
 
-    let sessions = {};
+    // ---------- 全局数据结构 ----------
+    let sessions = {};          // 会话库 { sessionId: { id, title, messages, createdAt } }
     let currentSessionId = null;
-    let currentCost = 0;
-    
-    // 输入价格：2元/百万tokens，输出价格：8元/百万tokens
-    const INPUT_COST_PER_M = 2;
-    const OUTPUT_COST_PER_M = 8;
+    let isLoadingFlag = false;   // 防止并发请求
 
-    const messagesContainer = document.getElementById('messages');
+    // DOM 元素
+    const messagesDiv = document.getElementById('messages');
     const userInput = document.getElementById('user-input');
     const sendBtn = document.getElementById('send-btn');
-    const sessionsList = document.getElementById('sessions-list');
-    const newSessionBtn = document.getElementById('new-session-btn');
-    const clearMessagesBtn = document.getElementById('clear-messages-btn');
-    const menuToggle = document.getElementById('menu-toggle');
+    const sessionsListDiv = document.getElementById('sessionsList');
+    const newSessionBtn = document.getElementById('newSessionBtn');
+    const clearChatBtn = document.getElementById('clearCurrentChatBtn');
+    const menuToggle = document.getElementById('menuToggle');
     const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('overlay');
-    const currentSessionTitle = document.getElementById('current-session-title');
-    const costBadge = document.getElementById('cost-badge');
-    const searchInput = document.getElementById('search-input');
-    const searchResults = document.getElementById('search-results');
-    const searchResultsList = document.getElementById('search-results-list');
-    const searchToggleBtn = document.getElementById('search-toggle-btn');
-    const closeSearchBtn = document.getElementById('close-search');
-    const syncToggle = document.getElementById('sync-toggle');
+    const mobileOverlay = document.getElementById('mobileOverlay');
+    const currentTitleSpan = document.getElementById('current-session-title');
 
-    // ========== 时间工具函数 ==========
-    function formatTime(timestamp) {
-        const date = new Date(timestamp);
-        return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
-    }
-    
-    function formatFullTime(timestamp) {
-        const date = new Date(timestamp);
-        return date.toLocaleString('zh-CN');
-    }
-    
-    function getDateKey(timestamp) {
-        const date = new Date(timestamp);
-        return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
-    }
-    
-    function isSameDay(timestamp1, timestamp2) {
-        return getDateKey(timestamp1) === getDateKey(timestamp2);
-    }
-    // ========== 时间工具函数结束 ==========
-
-    function showToast(msg) {
+    // ---------- 辅助函数 ----------
+    function showToast(text) {
         const toast = document.createElement('div');
-        toast.className = 'toast';
-        toast.textContent = msg;
+        toast.className = 'toast-msg';
+        toast.innerText = text;
         document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 1500);
+        setTimeout(() => toast.remove(), 2000);
     }
 
-    function updateCostDisplay() {
-        costBadge.textContent = `💰 本次约${currentCost.toFixed(4)}元`;
+    // 获取当前时间字符串 (小时:分钟)
+    function getTimeLabel() {
+        const now = new Date();
+        return `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
     }
 
-    function addToCost(inputTokens, outputTokens) {
-        const inputCost = (inputTokens / 1000000) * INPUT_COST_PER_M;
-        const outputCost = (outputTokens / 1000000) * OUTPUT_COST_PER_M;
-        currentCost += inputCost + outputCost;
-        updateCostDisplay();
+    // 保存全部数据到 localStorage
+    function persistAll() {
+        localStorage.setItem('deepseek_sessions_master', JSON.stringify(sessions));
+        if (currentSessionId) {
+            localStorage.setItem('deepseek_current_id', currentSessionId);
+        }
     }
 
-    function getStorageKey() {
-        return syncToggle.checked ? 'deepseek_sessions_v4_sync' : 'deepseek_sessions_v4_local_' + (navigator.userAgent.includes('Mobile') ? 'mobile' : 'desktop');
-    }
-
+    // 加载本地数据
     function loadData() {
-        const key = getStorageKey();
-        const saved = localStorage.getItem(key);
-        if (saved) {
-            sessions = JSON.parse(saved);
+        const raw = localStorage.getItem('deepseek_sessions_master');
+        if (raw) {
+            sessions = JSON.parse(raw);
         }
         if (Object.keys(sessions).length === 0) {
-            const id = Date.now().toString();
-            const now = Date.now();
-            sessions[id] = {
-                id: id,
+            const newId = Date.now().toString();
+            sessions[newId] = {
+                id: newId,
                 title: '新对话',
-                messages: [{ role: 'assistant', content: '你好！我是 DeepSeek AI 助手，有什么可以帮你的吗？', timestamp: now }],
-                createdAt: id
+                messages: [{ role: 'assistant', content: '你好！我是 DeepSeek 助手✨\n每条消息都会记录时间，你可以修改已发送的指令，AI 回复后自动跳转到该回复顶部。', timestamp: getTimeLabel() }],
+                createdAt: newId
             };
-            currentSessionId = id;
+            currentSessionId = newId;
         } else {
-            const lastUsedKey = key + '_current';
-            const lastUsed = localStorage.getItem(lastUsedKey);
-            if (lastUsed && sessions[lastUsed]) {
-                currentSessionId = lastUsed;
+            const lastId = localStorage.getItem('deepseek_current_id');
+            if (lastId && sessions[lastId]) {
+                currentSessionId = lastId;
             } else {
                 currentSessionId = Object.keys(sessions)[0];
             }
         }
-        saveData();
+        persistAll();
     }
 
-    function saveData() {
-        const key = getStorageKey();
-        localStorage.setItem(key, JSON.stringify(sessions));
-        if (currentSessionId) {
-            localStorage.setItem(key + '_current', currentSessionId);
-        }
-    }
-
-    function updateSessionTitle(sessionId) {
-        const session = sessions[sessionId];
-        if (!session) return;
-        const firstUserMsg = session.messages.find(m => m.role === 'user');
-        if (firstUserMsg) {
-            let title = firstUserMsg.content.slice(0, 20);
-            if (firstUserMsg.content.length > 20) title += '...';
-            session.title = title;
+    // 更新会话标题（根据第一条用户消息）
+    function updateSessionTitleFromMessages(sessionId) {
+        const sess = sessions[sessionId];
+        if (!sess) return;
+        const firstUserMsg = sess.messages.find(m => m.role === 'user');
+        if (firstUserMsg && firstUserMsg.content) {
+            let title = firstUserMsg.content.slice(0, 22);
+            if (firstUserMsg.content.length > 22) title += '…';
+            sess.title = title;
         } else {
-            session.title = '新对话';
+            sess.title = '新对话';
         }
-        renderSessionsList();
-        if (currentSessionId === sessionId) {
-            currentSessionTitle.textContent = session.title;
+        renderSidebar();
+        if (sessionId === currentSessionId) {
+            currentTitleSpan.innerText = sess.title;
         }
-        saveData();
+        persistAll();
     }
 
-    function renderSessionsList() {
-        const sorted = Object.values(sessions).sort((a, b) => b.createdAt - a.createdAt);
-        sessionsList.innerHTML = '';
-        sorted.forEach(session => {
+    // 渲染侧边栏
+    function renderSidebar() {
+        const sorted = Object.values(sessions).sort((a,b) => b.createdAt - a.createdAt);
+        sessionsListDiv.innerHTML = '';
+        for (const sess of sorted) {
             const div = document.createElement('div');
             div.className = 'session-item';
-            if (session.id === currentSessionId) div.classList.add('active');
+            if (sess.id === currentSessionId) div.classList.add('active');
             div.innerHTML = `
-                <span class="session-title">${escapeHtml(session.title)}</span>
-                <button class="delete-session-btn" data-id="${session.id}">🗑️</button>
+                <span class="session-title">${escapeHtml(sess.title)}</span>
+                <button class="delete-session-btn" data-id="${sess.id}">🗑️</button>
             `;
             div.addEventListener('click', (e) => {
                 if (e.target.classList.contains('delete-session-btn')) return;
-                switchSession(session.id);
+                switchToSession(sess.id);
             });
             const delBtn = div.querySelector('.delete-session-btn');
             delBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                deleteSession(session.id);
+                deleteSessionById(sess.id);
             });
-            sessionsList.appendChild(div);
-        });
-    }
-
-    function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-
-    function switchSession(sessionId) {
-        if (!sessions[sessionId]) return;
-        currentSessionId = sessionId;
-        currentCost = 0;
-        updateCostDisplay();
-        renderMessages();
-        renderSessionsList();
-        currentSessionTitle.textContent = sessions[sessionId].title;
-        saveData();
-        if (window.innerWidth <= 640) {
-            sidebar.classList.remove('open');
-            overlay.classList.remove('open');
+            sessionsListDiv.appendChild(div);
         }
     }
 
-    function deleteSession(sessionId) {
+    function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    function deleteSessionById(sid) {
         if (Object.keys(sessions).length === 1) {
             showToast('至少保留一个对话');
             return;
         }
-        delete sessions[sessionId];
-        if (currentSessionId === sessionId) {
+        delete sessions[sid];
+        if (currentSessionId === sid) {
             currentSessionId = Object.keys(sessions)[0];
-            currentCost = 0;
-            renderMessages();
+            renderMessagesThread();
         }
-        renderSessionsList();
-        currentSessionTitle.textContent = sessions[currentSessionId].title;
-        saveData();
+        renderSidebar();
+        const newTitle = sessions[currentSessionId]?.title || '对话';
+        currentTitleSpan.innerText = newTitle;
+        persistAll();
     }
 
-    function newSession() {
-        const id = Date.now().toString();
-        const now = Date.now();
-        sessions[id] = {
-            id: id,
-            title: '新对话',
-            messages: [{ role: 'assistant', content: '你好！我是 DeepSeek AI 助手，有什么可以帮你的吗？', timestamp: now }],
-            createdAt: id
-        };
-        currentSessionId = id;
-        currentCost = 0;
-        updateCostDisplay();
-        renderMessages();
-        renderSessionsList();
-        currentSessionTitle.textContent = '新对话';
-        saveData();
+    function switchToSession(sid) {
+        if (!sessions[sid]) return;
+        currentSessionId = sid;
+        renderMessagesThread();
+        renderSidebar();
+        currentTitleSpan.innerText = sessions[sid].title;
+        persistAll();
         if (window.innerWidth <= 640) {
             sidebar.classList.remove('open');
-            overlay.classList.remove('open');
+            mobileOverlay.classList.remove('open');
         }
     }
 
-    function clearCurrentMessages() {
-        const session = sessions[currentSessionId];
-        if (session) {
-            const now = Date.now();
-            session.messages = [{ role: 'assistant', content: '你好！我是 DeepSeek AI 助手，有什么可以帮你的吗？', timestamp: now }];
-            currentCost = 0;
-            updateCostDisplay();
-            renderMessages();
-            updateSessionTitle(currentSessionId);
-            saveData();
+    function clearCurrentSession() {
+        const sess = sessions[currentSessionId];
+        if (sess) {
+            sess.messages = [{ role: 'assistant', content: '对话已清空，随时提问～', timestamp: getTimeLabel() }];
+            renderMessagesThread();
+            updateSessionTitleFromMessages(currentSessionId);
+            showToast('当前对话已清空');
         }
     }
 
-    function scrollToMessage(messageWrapper) {
-        if (messageWrapper) {
-            const container = messagesContainer;
-            const elementTop = messageWrapper.offsetTop;
-            container.scrollTo({
-                top: elementTop - 60,
-                behavior: 'smooth'
+    function newEmptySession() {
+        const newId = Date.now().toString();
+        sessions[newId] = {
+            id: newId,
+            title: '新对话',
+            messages: [{ role: 'assistant', content: '你好！我是 DeepSeek 助手，消息带时间戳，支持修改指令。', timestamp: getTimeLabel() }],
+            createdAt: newId
+        };
+        currentSessionId = newId;
+        renderMessagesThread();
+        renderSidebar();
+        currentTitleSpan.innerText = '新对话';
+        persistAll();
+        if (window.innerWidth <= 640) {
+            sidebar.classList.remove('open');
+            mobileOverlay.classList.remove('open');
+        }
+    }
+
+    // 核心: 渲染消息区域，并且每条消息带时间和操作按钮
+    function renderMessagesThread() {
+        const sess = sessions[currentSessionId];
+        if (!sess) return;
+        messagesDiv.innerHTML = '';
+        const messageList = sess.messages;
+
+        for (let idx = 0; idx < messageList.length; idx++) {
+            const msg = messageList[idx];
+            const isUser = msg.role === 'user';
+            const wrapper = document.createElement('div');
+            wrapper.className = `message-wrapper ${isUser ? 'user-wrapper' : 'ai-wrapper'}`;
+            
+            const bubble = document.createElement('div');
+            bubble.className = `message ${isUser ? 'user-message' : 'ai-message'}`;
+            bubble.innerText = msg.content;
+            
+            // 时间与操作栏
+            const timeRow = document.createElement('div');
+            timeRow.className = 'message-time';
+            const timeSpan = document.createElement('span');
+            timeSpan.innerText = msg.timestamp || getTimeLabel();
+            timeRow.appendChild(timeSpan);
+            
+            // 操作按钮组 (编辑 / 复制 / 重新生成)
+            const actionDiv = document.createElement('div');
+            actionDiv.className = 'msg-actions';
+            
+            // 复制按钮 (通用)
+            const copyBtn = document.createElement('button');
+            copyBtn.innerText = '📋 复制';
+            copyBtn.className = 'msg-btn';
+            copyBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                navigator.clipboard.writeText(msg.content);
+                showToast('内容已复制');
             });
-            const messageDiv = messageWrapper.querySelector('.message');
-            if (messageDiv) {
-                messageDiv.style.transition = '0.3s';
-                messageDiv.style.boxShadow = '0 0 0 2px #3b82f6';
-                setTimeout(() => {
-                    messageDiv.style.boxShadow = '';
-                }, 1000);
+            actionDiv.appendChild(copyBtn);
+            
+            if (isUser) {
+                // 编辑指令按钮 (修改发出的消息)
+                const editBtn = document.createElement('button');
+                editBtn.innerText = '✏️ 修改指令';
+                editBtn.className = 'msg-btn';
+                editBtn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    if (isLoadingFlag) {
+                        showToast('等待AI回复完成后再修改');
+                        return;
+                    }
+                    // 弹出可修改区域
+                    const newContent = prompt('编辑你的消息 (修改后将重新生成回复)', msg.content);
+                    if (newContent && newContent.trim() !== '') {
+                        const trimmed = newContent.trim();
+                        // 1. 替换本条用户消息内容
+                        msg.content = trimmed;
+                        msg.timestamp = getTimeLabel();  // 更新时间
+                        // 2. 删除该用户消息之后的所有消息 (保留之前的上下文)
+                        const currentMsgList = sessions[currentSessionId].messages;
+                        const targetIndex = currentMsgList.findIndex(m => m === msg);
+                        if (targetIndex !== -1 && targetIndex + 1 < currentMsgList.length) {
+                            sessions[currentSessionId].messages = currentMsgList.slice(0, targetIndex + 1);
+                        }
+                        renderMessagesThread();
+                        updateSessionTitleFromMessages(currentSessionId);
+                        persistAll();
+                        // 3. 自动重新请求AI回复
+                        await requestAIResponseForCurrentLastUser();
+                    }
+                });
+                actionDiv.appendChild(editBtn);
+            } else {
+                // AI消息: 重新生成(基于其上一条用户消息)
+                const regenBtn = document.createElement('button');
+                regenBtn.innerText = '🔄 重新生成';
+                regenBtn.className = 'msg-btn';
+                regenBtn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    if (isLoadingFlag) {
+                        showToast('请等待当前回复完成');
+                        return;
+                    }
+                    // 找到这条AI消息的上一条用户消息
+                    const sessNow = sessions[currentSessionId];
+                    const aiIndex = sessNow.messages.findIndex(m => m === msg);
+                    if (aiIndex > 0) {
+                        let userMsgObj = null;
+                        for (let i = aiIndex-1; i >= 0; i--) {
+                            if (sessNow.messages[i].role === 'user') {
+                                userMsgObj = sessNow.messages[i];
+                                break;
+                            }
+                        }
+                        if (userMsgObj) {
+                            // 删除当前AI及之后所有消息
+                            sessNow.messages = sessNow.messages.slice(0, aiIndex);
+                            renderMessagesThread();
+                            // 重新请求
+                            await requestAIWithUserMessage(userMsgObj.content);
+                        } else {
+                            showToast('无法重新生成, 缺少用户消息');
+                        }
+                    } else {
+                        showToast('无法重新生成');
+                    }
+                });
+                actionDiv.appendChild(regenBtn);
             }
+            
+            wrapper.appendChild(bubble);
+            wrapper.appendChild(timeRow);
+            wrapper.appendChild(actionDiv);
+            messagesDiv.appendChild(wrapper);
+        }
+        
+        // 滚动到底部前先自动滚动到最新AI回复的顶部 (如果最新一条是AI就定位到该消息顶部)
+        if (messageList.length > 0) {
+            const lastMsgIndex = messageList.length - 1;
+            const lastMsgType = messageList[lastMsgIndex].role;
+            // 如果最后一条是assistant，则滚动到该消息的可见区域顶部
+            if (lastMsgType === 'assistant') {
+                const wrappers = messagesDiv.querySelectorAll('.message-wrapper');
+                if (wrappers[lastMsgIndex]) {
+                    wrappers[lastMsgIndex].scrollIntoView({ behavior: 'smooth', block: 'start' });
+                } else {
+                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                }
+            } else {
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }
+        } else {
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
     }
-
-    function performSearch() {
-        const keyword = searchInput.value.trim().toLowerCase();
-        if (!keyword) {
-            searchResults.classList.remove('show');
+    
+    // 发送消息并请求AI (普通发送)
+    async function sendUserMessage(text) {
+        if (isLoadingFlag) {
+            showToast('正在回复中，稍后再试');
             return;
         }
+        const question = text.trim();
+        if (!question) return;
         
-        const results = [];
-        for (const sessionId in sessions) {
-            const session = sessions[sessionId];
-            session.messages.forEach((msg, idx) => {
-                if (msg.content.toLowerCase().includes(keyword)) {
-                    results.push({
-                        sessionId: sessionId,
-                        sessionTitle: session.title,
-                        messageIndex: idx,
-                        content: msg.content,
-                        role: msg.role,
-                        preview: msg.content.slice(0, 80) + (msg.content.length > 80 ? '...' : '')
-                    });
-                }
-            });
-        }
+        const sess = sessions[currentSessionId];
+        // 添加用户消息（带时间）
+        sess.messages.push({ role: 'user', content: question, timestamp: getTimeLabel() });
+        renderMessagesThread();
+        updateSessionTitleFromMessages(currentSessionId);
+        persistAll();
         
-        if (results.length === 0) {
-            searchResultsList.innerHTML = '<div style="padding:12px;text-align:center;color:#64748b">未找到匹配内容</div>';
-        } else {
-            searchResultsList.innerHTML = '';
-            results.forEach(result => {
-                const div = document.createElement('div');
-                div.className = 'search-result-item';
-                div.innerHTML = `
-                    <div style="font-weight:500;font-size:0.7rem;color:#3b82f6">${escapeHtml(result.sessionTitle)} - ${result.role === 'user' ? '用户' : 'AI'}</div>
-                    <div style="font-size:0.75rem;color:#475569">${escapeHtml(result.preview)}</div>
-                `;
-                div.addEventListener('click', () => {
-                    switchSession(result.sessionId);
-                    setTimeout(() => {
-                        const wrappers = document.querySelectorAll('.message-wrapper');
-                        if (wrappers[result.messageIndex]) {
-                            scrollToMessage(wrappers[result.messageIndex]);
-                        }
-                    }, 100);
-                    searchResults.classList.remove('show');
-                    searchInput.value = '';
-                });
-                searchResultsList.appendChild(div);
-            });
-        }
-        searchResults.classList.add('show');
+        // 请求AI
+        await requestAIResponseForCurrentLastUser();
     }
-
-    function editMessage(index, oldContent) {
-        const session = sessions[currentSessionId];
-        if (!session) return;
-        
-        const newContent = prompt('编辑你的消息:', oldContent);
-        if (newContent && newContent.trim()) {
-            session.messages[index].content = newContent.trim();
-            session.messages[index].timestamp = Date.now();
-            session.messages = session.messages.slice(0, index + 1);
-            renderMessages();
-            updateSessionTitle(currentSessionId);
-            saveData();
-            sendEditedMessage(newContent.trim());
-        }
+    
+    // 根据最后一条用户消息请求AI (不额外添加)
+    async function requestAIResponseForCurrentLastUser() {
+        const sess = sessions[currentSessionId];
+        const lastMsg = sess.messages[sess.messages.length - 1];
+        if (!lastMsg || lastMsg.role !== 'user') return;
+        await requestAIWithUserMessage(lastMsg.content);
     }
-
-    async function sendEditedMessage(question) {
-        showLoading();
+    
+    async function requestAIWithUserMessage(userQuestion) {
+        if (isLoadingFlag) return;
+        isLoadingFlag = true;
         sendBtn.disabled = true;
         userInput.disabled = true;
         
-        const reply = await callDeepSeekAPI(question);
+        // 显示loading占位符 (临时)
+        const sess = sessions[currentSessionId];
+        const loadingPlaceholder = { role: 'assistant', content: '🤔 思考中...', timestamp: getTimeLabel(), isLoading: true };
+        sess.messages.push(loadingPlaceholder);
+        renderMessagesThread();
         
-        hideLoading();
-        addMessage(reply, 'assistant');
-        sendBtn.disabled = false;
-        userInput.disabled = false;
-    }
-
-    async function regenerateMessage(userMsgIndex, aiMsgIndex) {
-        const session = sessions[currentSessionId];
-        if (!session) return;
+        // 构建 API 历史 (过滤掉 loading 标记)
+        const historyMsgs = sess.messages.filter(m => !m.isLoading).map(m => ({
+            role: m.role,
+            content: m.content
+        }));
+        // system 提示
+        const messagesForAPI = [{ role: 'system', content: 'You are a helpful assistant. 请用中文友好回复。' }, ...historyMsgs];
         
-        const userMsg = session.messages[userMsgIndex];
-        if (!userMsg || userMsg.role !== 'user') return;
-        
-        session.messages.splice(aiMsgIndex, 1);
-        renderMessages();
-        
-        showLoading();
-        const reply = await callDeepSeekAPI(userMsg.content);
-        hideLoading();
-        addMessage(reply, 'assistant');
-    }
-
-    function copyMessage(content) {
-        navigator.clipboard.writeText(content).then(() => {
-            showToast('✅ 已复制到剪贴板');
-        }).catch(() => {
-            showToast('❌ 复制失败');
-        });
-    }
-
-    function renderMessages() {
-        const session = sessions[currentSessionId];
-        if (!session) return;
-        messagesContainer.innerHTML = '';
-        
-        let lastDate = null;
-        
-        session.messages.forEach((msg, idx) => {
-            const msgTime = msg.timestamp || Date.now();
-            const currentDate = getDateKey(msgTime);
-            
-            // 添加日期分隔线
-            if (lastDate !== currentDate) {
-                const dateDivider = document.createElement('div');
-                dateDivider.className = 'date-divider';
-                const dateStr = new Date(msgTime).toLocaleDateString('zh-CN', { month: 'long', day: 'numeric' });
-                dateDivider.innerHTML = `<span>${dateStr}</span>`;
-                messagesContainer.appendChild(dateDivider);
-                lastDate = currentDate;
-            }
-            
-            // 创建消息容器
-            const wrapper = document.createElement('div');
-            wrapper.className = `message-wrapper ${msg.role === 'user' ? 'user-wrapper' : 'ai-wrapper'}`;
-            
-            // 消息主体
-            const messageDiv = document.createElement('div');
-            messageDiv.classList.add('message');
-            messageDiv.classList.add(msg.role === 'user' ? 'user-message' : 'ai-message');
-            messageDiv.textContent = msg.content;
-            
-            // 时间显示
-            const timeSpan = document.createElement('div');
-            timeSpan.className = 'message-time';
-            timeSpan.textContent = formatTime(msgTime);
-            timeSpan.title = formatFullTime(msgTime);
-            
-            // 操作按钮
-            const actionsDiv = document.createElement('div');
-            actionsDiv.className = 'message-actions';
-            
-            const copyBtn = document.createElement('button');
-            copyBtn.textContent = '📋';
-            copyBtn.className = 'msg-action-btn';
-            copyBtn.title = '复制';
-            copyBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                copyMessage(msg.content);
-            });
-            actionsDiv.appendChild(copyBtn);
-            
-            const locateBtn = document.createElement('button');
-            locateBtn.textContent = '📍';
-            locateBtn.className = 'msg-action-btn';
-            locateBtn.title = '定位到此消息';
-            locateBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                scrollToMessage(wrapper);
-            });
-            actionsDiv.appendChild(locateBtn);
-            
-            if (msg.role === 'user') {
-                const editBtn = document.createElement('button');
-                editBtn.textContent = '✏️';
-                editBtn.className = 'msg-action-btn';
-                editBtn.title = '编辑';
-                editBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    editMessage(idx, msg.content);
-                });
-                actionsDiv.appendChild(editBtn);
-            } else if (msg.role === 'assistant' && !msg.isLoading) {
-                let userMsgIndex = -1;
-                for (let i = idx - 1; i >= 0; i--) {
-                    if (session.messages[i].role === 'user') {
-                        userMsgIndex = i;
-                        break;
-                    }
-                }
-                if (userMsgIndex !== -1) {
-                    const regenBtn = document.createElement('button');
-                    regenBtn.textContent = '🔄';
-                    regenBtn.className = 'msg-action-btn';
-                    regenBtn.title = '重新生成';
-                    regenBtn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        regenerateMessage(userMsgIndex, idx);
-                    });
-                    actionsDiv.appendChild(regenBtn);
-                }
-            }
-            
-            messageDiv.appendChild(actionsDiv);
-            wrapper.appendChild(messageDiv);
-            wrapper.appendChild(timeSpan);
-            messagesContainer.appendChild(wrapper);
-        });
-        
-        // 滚动到底部
-        setTimeout(() => {
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }, 50);
-    }
-
-    function addMessage(content, role, tokenInfo = null) {
-        const session = sessions[currentSessionId];
-        if (session) {
-            const timestamp = Date.now();
-            session.messages.push({ role: role, content: content, timestamp: timestamp });
-            renderMessages();
-            
-            if (role === 'user') {
-                updateSessionTitle(currentSessionId);
-            }
-            if (tokenInfo) {
-                addToCost(tokenInfo.inputTokens || 0, tokenInfo.outputTokens || 0);
-            }
-            saveData();
-        }
-    }
-
-    let isLoading = false;
-    function showLoading() {
-        isLoading = true;
-        const session = sessions[currentSessionId];
-        if (session) {
-            session.messages.push({ role: 'assistant', content: '🤔 思考中...', isLoading: true, timestamp: Date.now() });
-            renderMessages();
-        }
-    }
-
-    function hideLoading() {
-        isLoading = false;
-        const session = sessions[currentSessionId];
-        if (session && session.messages[session.messages.length - 1]?.isLoading) {
-            session.messages.pop();
-            renderMessages();
-        }
-    }
-
-    async function callDeepSeekAPI(userQuestion) {
-        const session = sessions[currentSessionId];
-        
-        let history = session.messages
-            .filter(m => !m.isLoading && m.role !== 'system');
-        
-        if (history.length > MAX_HISTORY_ROUNDS * 2) {
-            history = history.slice(-MAX_HISTORY_ROUNDS * 2);
-        }
-        
-        const messages = [{ role: 'system', content: 'You are a helpful assistant.' }, ...history];
-        
-        function estimateTokens(text) {
-            const chinese = (text.match(/[\u4e00-\u9fa5]/g) || []).length;
-            const other = text.length - chinese;
-            return Math.ceil(chinese * 1.5 + other * 0.5);
-        }
-        
-        const inputText = JSON.stringify(messages);
-        const estimatedInputTokens = estimateTokens(inputText);
-        
-        const payload = {
-            model: "deepseek-chat",
-            messages: messages,
-            stream: false,
-            temperature: 0.7,
-            max_tokens: 1000
-        };
-
         try {
             const response = await fetch(API_URL, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
-                },
-                body: JSON.stringify(payload)
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${DEEPSEEK_API_KEY}` },
+                body: JSON.stringify({
+                    model: 'deepseek-chat',
+                    messages: messagesForAPI,
+                    stream: false,
+                    temperature: 0.7,
+                    max_tokens: 2000
+                })
             });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`API 请求失败 (${response.status}): ${errorText}`);
-            }
-
-            const data = await response.json();
-            const reply = data.choices[0].message.content;
-            const outputTokens = data.usage?.completion_tokens || estimateTokens(reply);
             
-            addToCost(estimatedInputTokens, outputTokens);
-            return reply;
-        } catch (error) {
-            console.error('调用 DeepSeek 出错:', error);
-            return `❌ 出错了: ${error.message}`;
+            if (!response.ok) {
+                let errDetail = await response.text();
+                throw new Error(`API错误 ${response.status}: ${errDetail}`);
+            }
+            const data = await response.json();
+            const aiReply = data.choices[0].message.content;
+            
+            // 替换 loading 消息
+            const idxLoading = sess.messages.findIndex(m => m.isLoading === true);
+            if (idxLoading !== -1) {
+                sess.messages.splice(idxLoading, 1, { role: 'assistant', content: aiReply, timestamp: getTimeLabel() });
+            } else {
+                sess.messages.push({ role: 'assistant', content: aiReply, timestamp: getTimeLabel() });
+            }
+            renderMessagesThread();
+            updateSessionTitleFromMessages(currentSessionId);
+            persistAll();
+        } catch (err) {
+            console.error(err);
+            // 移除loading并显示错误消息
+            const idxErr = sess.messages.findIndex(m => m.isLoading === true);
+            if (idxErr !== -1) {
+                sess.messages.splice(idxErr, 1, { role: 'assistant', content: `❌ 请求失败: ${err.message}`, timestamp: getTimeLabel() });
+            } else {
+                sess.messages.push({ role: 'assistant', content: `❌ 出错: ${err.message}`, timestamp: getTimeLabel() });
+            }
+            renderMessagesThread();
+            persistAll();
+        } finally {
+            isLoadingFlag = false;
+            sendBtn.disabled = false;
+            userInput.disabled = false;
+            userInput.focus();
         }
     }
-
-    async function handleSend() {
-        if (isLoading) return;
-        const question = userInput.value.trim();
-        if (!question) return;
-
+    
+    // 发送控制
+    async function onSend() {
+        if (isLoadingFlag) return;
+        const raw = userInput.value;
+        if (!raw.trim()) return;
         userInput.value = '';
-        addMessage(question, 'user');
-        showLoading();
-        sendBtn.disabled = true;
-        userInput.disabled = true;
-
-        const reply = await callDeepSeekAPI(question);
-        
-        hideLoading();
-        addMessage(reply, 'assistant');
-        sendBtn.disabled = false;
-        userInput.disabled = false;
-        userInput.focus();
+        await sendUserMessage(raw.trim());
     }
-
-    // 事件绑定
-    sendBtn.addEventListener('click', handleSend);
+    
+    // 监听回车
     userInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter' && !sendBtn.disabled && !isLoading) {
-            handleSend();
+        if (e.key === 'Enter' && !e.shiftKey && !isLoadingFlag) {
+            e.preventDefault();
+            onSend();
         }
     });
-    newSessionBtn.addEventListener('click', newSession);
-    clearMessagesBtn.addEventListener('click', clearCurrentMessages);
+    sendBtn.addEventListener('click', onSend);
+    newSessionBtn.addEventListener('click', newEmptySession);
+    clearChatBtn.addEventListener('click', clearCurrentSession);
+    
+    // 移动端侧边栏
     menuToggle.addEventListener('click', () => {
         sidebar.classList.toggle('open');
-        overlay.classList.toggle('open');
+        mobileOverlay.classList.toggle('open');
     });
-    overlay.addEventListener('click', () => {
+    mobileOverlay.addEventListener('click', () => {
         sidebar.classList.remove('open');
-        overlay.classList.remove('open');
+        mobileOverlay.classList.remove('open');
     });
-    searchToggleBtn.addEventListener('click', () => {
-        searchInput.focus();
-        if (searchInput.value.trim()) {
-            performSearch();
-        } else {
-            searchInput.scrollIntoView({ behavior: 'smooth' });
-        }
-    });
-    searchInput.addEventListener('input', performSearch);
-    closeSearchBtn.addEventListener('click', () => {
-        searchResults.classList.remove('show');
-    });
-    syncToggle.addEventListener('change', () => {
-        loadData();
-        renderSessionsList();
-        renderMessages();
-        currentSessionTitle.textContent = sessions[currentSessionId]?.title || '新对话';
-        showToast(syncToggle.checked ? '已开启跨设备同步' : '已关闭同步，仅本设备保存');
-    });
-    document.addEventListener('click', (e) => {
-        if (!searchResults.contains(e.target) && e.target !== searchInput && e.target !== searchToggleBtn) {
-            searchResults.classList.remove('show');
-        }
-    });
-
+    
     // 初始化
     loadData();
-    renderSessionsList();
-    renderMessages();
-    currentSessionTitle.textContent = sessions[currentSessionId]?.title || '新对话';
-    updateCostDisplay();
+    renderSidebar();
+    renderMessagesThread();
+    currentTitleSpan.innerText = sessions[currentSessionId]?.title || '对话';
 </script>
 </body>
 </html>
