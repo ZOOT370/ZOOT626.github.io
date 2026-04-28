@@ -2,667 +2,256 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
-    <title>DeepSeek 智能助理 · 时间胶囊</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>DeepSeek 测试版</title>
     <style>
-        * {
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
-
+        * { box-sizing: border-box; }
         body {
             font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background: #f1f5f9;
+            background: #f5f7fb;
             margin: 0;
-            padding: 0;
+            padding: 16px;
             height: 100vh;
             display: flex;
-            overflow: hidden;
-        }
-
-        /* 侧边栏 (会话管理) */
-        .sidebar {
-            width: 280px;
-            background: #0f172a;
-            color: #e2e8f0;
-            display: flex;
             flex-direction: column;
-            transition: transform 0.25s ease;
-            border-right: 1px solid #1e293b;
-            z-index: 20;
         }
-
-        .sidebar-header {
-            padding: 18px 16px;
-            border-bottom: 1px solid #1e293b;
-        }
-
-        .new-session-btn {
+        .chat-container {
+            max-width: 800px;
+            margin: 0 auto;
             width: 100%;
-            background: #3b82f6;
-            color: white;
-            border: none;
-            border-radius: 40px;
-            padding: 12px;
-            font-weight: 600;
-            font-size: 0.9rem;
-            cursor: pointer;
-            transition: 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        .new-session-btn:active {
-            transform: scale(0.97);
-            background: #2563eb;
-        }
-
-        .sessions-list {
-            flex: 1;
-            overflow-y: auto;
-            padding: 12px;
-        }
-
-        .session-item {
-            padding: 12px 14px;
-            border-radius: 16px;
-            margin-bottom: 8px;
-            cursor: pointer;
-            transition: 0.2s;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #1e293b;
-        }
-
-        .session-item.active {
-            background: #3b82f6;
-        }
-
-        .session-title {
-            flex: 1;
-            font-size: 0.85rem;
-            font-weight: 500;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .delete-session-btn {
-            background: rgba(0,0,0,0.3);
-            border: none;
-            color: #cbd5e1;
-            cursor: pointer;
-            font-size: 1rem;
-            border-radius: 30px;
-            width: 28px;
-            height: 28px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        /* 主聊天区 */
-        .main-chat {
-            flex: 1;
+            background: white;
+            border-radius: 28px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
             display: flex;
             flex-direction: column;
-            background: #ffffff;
+            height: 100%;
+            overflow: hidden;
         }
-
-        .chat-header {
-            background: white;
-            padding: 14px 20px;
-            border-bottom: 1px solid #e9eef3;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            backdrop-filter: blur(10px);
-        }
-
-        .menu-toggle {
-            display: none;
-            background: none;
-            border: none;
-            font-size: 1.6rem;
-            cursor: pointer;
-            padding: 4px 10px;
-        }
-
-        #current-session-title {
-            font-size: 1.2rem;
+        h1 {
+            font-size: 1.5rem;
             font-weight: 600;
+            text-align: center;
+            padding: 16px;
             margin: 0;
-            background: #f1f5f9;
-            padding: 6px 16px;
-            border-radius: 40px;
+            border-bottom: 1px solid #e9ecef;
+            background: white;
         }
-
-        .session-actions {
-            display: flex;
-            gap: 10px;
-        }
-
-        .action-icon {
-            background: #f1f5f9;
-            border: none;
-            font-size: 1.2rem;
-            border-radius: 30px;
-            padding: 6px 12px;
-            cursor: pointer;
-        }
-
-        /* 消息区域 */
         #messages {
             flex: 1;
             overflow-y: auto;
-            padding: 24px 20px;
+            padding: 20px;
             display: flex;
             flex-direction: column;
-            gap: 18px;
-            scroll-behavior: smooth;
+            gap: 12px;
         }
-
-        /* 消息卡片 */
-        .message-wrapper {
-            display: flex;
-            flex-direction: column;
-            max-width: 85%;
-            position: relative;
-        }
-
-        .user-wrapper {
-            align-self: flex-end;
-        }
-
-        .ai-wrapper {
-            align-self: flex-start;
-        }
-
         .message {
-            padding: 12px 18px;
-            border-radius: 26px;
-            line-height: 1.5;
+            padding: 12px 16px;
+            border-radius: 24px;
+            max-width: 85%;
+            line-height: 1.4;
             word-wrap: break-word;
-            white-space: pre-wrap;
-            word-break: break-word;
-            font-size: 0.95rem;
-            position: relative;
-            transition: all 0.1s;
         }
-
         .user-message {
             background: #3b82f6;
             color: white;
-            border-bottom-right-radius: 6px;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
         }
-
         .ai-message {
             background: #f1f5f9;
-            color: #0f172a;
-            border-bottom-left-radius: 6px;
             border: 1px solid #e2e8f0;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+            color: #0f172a;
         }
-
-        .message-time {
-            font-size: 0.7rem;
-            margin-top: 6px;
-            margin-left: 12px;
-            margin-right: 12px;
-            color: #94a3b8;
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
-
-        .user-wrapper .message-time {
-            justify-content: flex-end;
-        }
-
-        /* 悬浮操作栏 */
-        .msg-actions {
-            display: flex;
-            gap: 8px;
-            margin-top: 6px;
-            justify-content: flex-end;
-            opacity: 0;
-            transition: 0.1s;
-        }
-
-        .message-wrapper:hover .msg-actions {
-            opacity: 1;
-        }
-
-        .msg-btn {
-            background: #eef2ff;
-            border: none;
-            font-size: 0.75rem;
-            padding: 4px 12px;
-            border-radius: 30px;
-            cursor: pointer;
-            color: #1e293b;
-            backdrop-filter: blur(4px);
-        }
-
-        .loading-bubble {
-            background: #f1f5f9;
-            padding: 12px 18px;
-            border-radius: 26px;
-            color: #475569;
+        .loading {
             font-style: italic;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
+            color: #64748b;
+            background: #f1f5f9;
         }
-
-        /* 底部输入 */
         .input-area {
-            padding: 16px 20px 24px;
-            border-top: 1px solid #eef2ff;
-            background: white;
+            padding: 16px;
+            border-top: 1px solid #e9ecef;
             display: flex;
             gap: 12px;
-            align-items: center;
+            background: white;
         }
-
         #user-input {
             flex: 1;
-            padding: 14px 20px;
-            border: 1px solid #cbd5e6;
-            border-radius: 48px;
+            padding: 12px 18px;
+            border: 1px solid #cbd5e1;
+            border-radius: 40px;
             font-size: 1rem;
             outline: none;
             font-family: inherit;
-            background: #ffffff;
         }
-
-        #user-input:focus {
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59,130,246,0.2);
-        }
-
         #send-btn {
             background: #3b82f6;
             color: white;
             border: none;
-            border-radius: 48px;
-            padding: 12px 28px;
+            border-radius: 40px;
+            padding: 0 24px;
             font-weight: 600;
             cursor: pointer;
         }
-
-        .toast-msg {
+        button:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+        .toast {
             position: fixed;
             bottom: 100px;
             left: 50%;
             transform: translateX(-50%);
-            background: #0f172a;
+            background: #1e293b;
             color: white;
-            padding: 8px 18px;
+            padding: 8px 16px;
             border-radius: 40px;
-            font-size: 0.8rem;
-            z-index: 1100;
-            pointer-events: none;
+            font-size: 0.85rem;
+            z-index: 1000;
             animation: fadeOut 2s ease forwards;
         }
-
         @keyframes fadeOut {
             0% { opacity: 0; transform: translateX(-50%) translateY(10px); }
             15% { opacity: 1; transform: translateX(-50%) translateY(0); }
             85% { opacity: 1; transform: translateX(-50%) translateY(0); }
             100% { opacity: 0; visibility: hidden; }
         }
-
-        /* 编辑模式 */
-        .edit-textarea {
-            width: 100%;
-            font-family: inherit;
-            font-size: 0.95rem;
-            padding: 10px 14px;
-            border-radius: 20px;
-            border: 1px solid #3b82f6;
-            background: white;
-            resize: vertical;
-        }
-
-        @media (max-width: 640px) {
-            .sidebar {
-                position: fixed;
-                left: 0;
-                top: 0;
-                height: 100%;
-                transform: translateX(-100%);
-                width: 260px;
-                z-index: 200;
-            }
-            .sidebar.open {
-                transform: translateX(0);
-            }
-            .menu-toggle {
-                display: block;
-            }
-            .message-wrapper {
-                max-width: 92%;
-            }
-            .overlay-mobile {
-                display: none;
-                position: fixed;
-                inset: 0;
-                background: rgba(0,0,0,0.4);
-                z-index: 150;
-            }
-            .overlay-mobile.open {
-                display: block;
-            }
-        }
     </style>
 </head>
 <body>
-<div class="overlay-mobile" id="mobileOverlay"></div>
-<div class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-        <button class="new-session-btn" id="newSessionBtn">✨ 新对话</button>
+<div class="chat-container">
+    <h1>🤖 DeepSeek 测试版</h1>
+    <div id="messages">
+        <div class="message ai-message">你好！我是 DeepSeek AI 助手，发送消息测试一下～</div>
     </div>
-    <div class="sessions-list" id="sessionsList"></div>
-</div>
-
-<div class="main-chat">
-    <div class="chat-header">
-        <button class="menu-toggle" id="menuToggle">☰</button>
-        <div id="current-session-title">对话空间</div>
-        <div class="session-actions">
-            <button class="action-icon" id="clearCurrentChatBtn" title="清空当前对话">🧹</button>
-        </div>
-    </div>
-    <div id="messages"></div>
     <div class="input-area">
-        <input type="text" id="user-input" placeholder="输入消息… （支持修改指令）" autocomplete="off">
+        <input type="text" id="user-input" placeholder="输入你的问题..." autocomplete="off">
         <button id="send-btn">发送</button>
     </div>
 </div>
 
 <script>
-    // =============================================
-    // ✅ 已替换为你的 API Key
-    // =============================================
+    // ==================== API Key 已替你填好 ====================
     const DEEPSEEK_API_KEY = 'sk-e6ef13c762094fc2aee6b7cc1643ca1d';
     const API_URL = 'https://api.deepseek.com/chat/completions';
 
-    // ---------- 全局变量 ----------
-    let sessions = {};
-    let currentSessionId = null;
-    let isLoadingFlag = false;
-
-    // DOM 元素
-    const messagesDiv = document.getElementById('messages');
+    const messagesContainer = document.getElementById('messages');
     const userInput = document.getElementById('user-input');
     const sendBtn = document.getElementById('send-btn');
-    const sessionsListDiv = document.getElementById('sessionsList');
-    const newSessionBtn = document.getElementById('newSessionBtn');
-    const clearChatBtn = document.getElementById('clearCurrentChatBtn');
-    const menuToggle = document.getElementById('menuToggle');
-    const sidebar = document.getElementById('sidebar');
-    const mobileOverlay = document.getElementById('mobileOverlay');
-    const currentTitleSpan = document.getElementById('current-session-title');
 
-    // ---------- 辅助函数 ----------
-    function showToast(text) {
+    // 对话历史（简化）
+    let conversationHistory = [
+        { role: "system", content: "You are a helpful assistant." }
+    ];
+
+    function showToast(msg) {
         const toast = document.createElement('div');
-        toast.className = 'toast-msg';
-        toast.innerText = text;
+        toast.className = 'toast';
+        toast.innerText = msg;
         document.body.appendChild(toast);
         setTimeout(() => toast.remove(), 2000);
     }
 
-    function getTimeLabel() {
-        const now = new Date();
-        return `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+    function addMessage(content, sender) {
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('message');
+        messageDiv.classList.add(sender === 'user' ? 'user-message' : 'ai-message');
+        messageDiv.textContent = content;
+        messagesContainer.appendChild(messageDiv);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        return messageDiv;
     }
 
-    function persistAll() {
-        localStorage.setItem('deepseek_sessions_master', JSON.stringify(sessions));
-        if (currentSessionId) localStorage.setItem('deepseek_current_id', currentSessionId);
+    let loadingDiv = null;
+    function showLoading() {
+        if (loadingDiv) loadingDiv.remove();
+        loadingDiv = document.createElement('div');
+        loadingDiv.classList.add('message', 'ai-message', 'loading');
+        loadingDiv.textContent = '🤔 思考中...';
+        messagesContainer.appendChild(loadingDiv);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 
-    function loadData() {
-        const raw = localStorage.getItem('deepseek_sessions_master');
-        if (raw) sessions = JSON.parse(raw);
-        if (Object.keys(sessions).length === 0) {
-            const newId = Date.now().toString();
-            sessions[newId] = {
-                id: newId, title: '新对话',
-                messages: [{ role: 'assistant', content: '你好！我是 DeepSeek 助手✨', timestamp: getTimeLabel() }],
-                createdAt: newId
-            };
-            currentSessionId = newId;
-        } else {
-            const lastId = localStorage.getItem('deepseek_current_id');
-            currentSessionId = (lastId && sessions[lastId]) ? lastId : Object.keys(sessions)[0];
-        }
-        persistAll();
-    }
-
-    function updateSessionTitle(sessionId) {
-        const sess = sessions[sessionId];
-        if (!sess) return;
-        const firstUserMsg = sess.messages.find(m => m.role === 'user');
-        sess.title = firstUserMsg ? (firstUserMsg.content.slice(0, 20) + (firstUserMsg.content.length > 20 ? '…' : '')) : '新对话';
-        renderSidebar();
-        if (sessionId === currentSessionId) currentTitleSpan.innerText = sess.title;
-        persistAll();
-    }
-
-    function renderSidebar() {
-        const sorted = Object.values(sessions).sort((a,b) => b.createdAt - a.createdAt);
-        sessionsListDiv.innerHTML = '';
-        for (const sess of sorted) {
-            const div = document.createElement('div');
-            div.className = `session-item ${sess.id === currentSessionId ? 'active' : ''}`;
-            div.innerHTML = `<span class="session-title">${escapeHtml(sess.title)}</span><button class="delete-session-btn" data-id="${sess.id}">🗑️</button>`;
-            div.querySelector('.delete-session-btn').onclick = (e) => { e.stopPropagation(); deleteSessionById(sess.id); };
-            div.onclick = () => switchToSession(sess.id);
-            sessionsListDiv.appendChild(div);
+    function hideLoading() {
+        if (loadingDiv) {
+            loadingDiv.remove();
+            loadingDiv = null;
         }
     }
 
-    function escapeHtml(str) { const d = document.createElement('div'); d.textContent = str; return d.innerHTML; }
+    async function callDeepSeekAPI(userQuestion) {
+        conversationHistory.push({ role: "user", content: userQuestion });
 
-    function deleteSessionById(sid) {
-        if (Object.keys(sessions).length === 1) { showToast('至少保留一个对话'); return; }
-        delete sessions[sid];
-        if (currentSessionId === sid) currentSessionId = Object.keys(sessions)[0];
-        renderMessagesThread();
-        renderSidebar();
-        currentTitleSpan.innerText = sessions[currentSessionId]?.title || '对话';
-        persistAll();
-    }
+        const payload = {
+            model: "deepseek-chat",
+            messages: conversationHistory,
+            stream: false,
+            temperature: 0.7,
+            max_tokens: 2000
+        };
 
-    function switchToSession(sid) {
-        if (!sessions[sid]) return;
-        currentSessionId = sid;
-        renderMessagesThread();
-        renderSidebar();
-        currentTitleSpan.innerText = sessions[sid].title;
-        persistAll();
-        if (window.innerWidth <= 640) { sidebar.classList.remove('open'); mobileOverlay.classList.remove('open'); }
-    }
-
-    function clearCurrentSession() {
-        const sess = sessions[currentSessionId];
-        if (sess) {
-            sess.messages = [{ role: 'assistant', content: '对话已清空，随时提问～', timestamp: getTimeLabel() }];
-            renderMessagesThread();
-            updateSessionTitle(currentSessionId);
-            showToast('当前对话已清空');
-        }
-    }
-
-    function newEmptySession() {
-        const newId = Date.now().toString();
-        sessions[newId] = { id: newId, title: '新对话', messages: [{ role: 'assistant', content: '你好！我是 DeepSeek 助手✨', timestamp: getTimeLabel() }], createdAt: newId };
-        currentSessionId = newId;
-        renderMessagesThread();
-        renderSidebar();
-        currentTitleSpan.innerText = '新对话';
-        persistAll();
-        if (window.innerWidth <= 640) { sidebar.classList.remove('open'); mobileOverlay.classList.remove('open'); }
-    }
-
-    function renderMessagesThread() {
-        const sess = sessions[currentSessionId];
-        if (!sess) return;
-        messagesDiv.innerHTML = '';
-        for (let idx = 0; idx < sess.messages.length; idx++) {
-            const msg = sess.messages[idx];
-            const isUser = msg.role === 'user';
-            const wrapper = document.createElement('div');
-            wrapper.className = `message-wrapper ${isUser ? 'user-wrapper' : 'ai-wrapper'}`;
-            const bubble = document.createElement('div');
-            bubble.className = `message ${isUser ? 'user-message' : 'ai-message'}`;
-            bubble.innerText = msg.content;
-            const timeRow = document.createElement('div');
-            timeRow.className = 'message-time';
-            timeRow.innerHTML = `<span>${msg.timestamp || getTimeLabel()}</span>`;
-            
-            const actionDiv = document.createElement('div');
-            actionDiv.className = 'msg-actions';
-            const copyBtn = document.createElement('button');
-            copyBtn.innerText = '📋 复制';
-            copyBtn.className = 'msg-btn';
-            copyBtn.onclick = () => { navigator.clipboard.writeText(msg.content); showToast('已复制'); };
-            actionDiv.appendChild(copyBtn);
-            
-            if (isUser) {
-                const editBtn = document.createElement('button');
-                editBtn.innerText = '✏️ 修改指令';
-                editBtn.className = 'msg-btn';
-                editBtn.onclick = async () => {
-                    if (isLoadingFlag) { showToast('请等待回复完成'); return; }
-                    const newContent = prompt('编辑消息', msg.content);
-                    if (newContent?.trim()) {
-                        msg.content = newContent.trim();
-                        msg.timestamp = getTimeLabel();
-                        const currentList = sessions[currentSessionId].messages;
-                        const targetIdx = currentList.findIndex(m => m === msg);
-                        if (targetIdx !== -1) sessions[currentSessionId].messages = currentList.slice(0, targetIdx + 1);
-                        renderMessagesThread();
-                        updateSessionTitle(currentSessionId);
-                        persistAll();
-                        await requestAIResponseForCurrentLastUser();
-                    }
-                };
-                actionDiv.appendChild(editBtn);
-            } else {
-                const regenBtn = document.createElement('button');
-                regenBtn.innerText = '🔄 重新生成';
-                regenBtn.className = 'msg-btn';
-                regenBtn.onclick = async () => {
-                    if (isLoadingFlag) { showToast('请等待回复完成'); return; }
-                    const sessNow = sessions[currentSessionId];
-                    const aiIndex = sessNow.messages.findIndex(m => m === msg);
-                    let userMsg = null;
-                    for (let i = aiIndex-1; i >= 0; i--) { if (sessNow.messages[i].role === 'user') { userMsg = sessNow.messages[i]; break; } }
-                    if (userMsg) {
-                        sessNow.messages = sessNow.messages.slice(0, aiIndex);
-                        renderMessagesThread();
-                        await requestAIWithUserMessage(userMsg.content);
-                    } else showToast('无法重新生成');
-                };
-                actionDiv.appendChild(regenBtn);
-            }
-            wrapper.append(bubble, timeRow, actionDiv);
-            messagesDiv.appendChild(wrapper);
-        }
-        if (sess.messages.length) {
-            const last = sess.messages[sess.messages.length-1];
-            if (last.role === 'assistant') {
-                const wrappers = messagesDiv.querySelectorAll('.message-wrapper');
-                wrappers[wrappers.length-1]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            } else messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        }
-    }
-    
-    async function sendUserMessage(text) {
-        if (isLoadingFlag) { showToast('正在回复中'); return; }
-        const question = text.trim();
-        if (!question) return;
-        const sess = sessions[currentSessionId];
-        sess.messages.push({ role: 'user', content: question, timestamp: getTimeLabel() });
-        renderMessagesThread();
-        updateSessionTitle(currentSessionId);
-        persistAll();
-        await requestAIResponseForCurrentLastUser();
-    }
-    
-    async function requestAIResponseForCurrentLastUser() {
-        const sess = sessions[currentSessionId];
-        const lastMsg = sess.messages[sess.messages.length-1];
-        if (lastMsg?.role !== 'user') return;
-        await requestAIWithUserMessage(lastMsg.content);
-    }
-    
-    async function requestAIWithUserMessage(userQuestion) {
-        if (isLoadingFlag) return;
-        isLoadingFlag = true;
-        sendBtn.disabled = true;
-        userInput.disabled = true;
-        const sess = sessions[currentSessionId];
-        const loadingId = Date.now();
-        sess.messages.push({ role: 'assistant', content: '🤔 思考中...', timestamp: getTimeLabel(), isLoading: true, loadingId });
-        renderMessagesThread();
-        
-        const historyMsgs = sess.messages.filter(m => !m.isLoading && m.role !== 'system').map(m => ({ role: m.role, content: m.content }));
-        const messagesForAPI = [{ role: 'system', content: 'You are a helpful assistant. 请用中文友好回复。' }, ...historyMsgs];
-        
         try {
             const response = await fetch(API_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${DEEPSEEK_API_KEY}` },
-                body: JSON.stringify({ model: 'deepseek-chat', messages: messagesForAPI, stream: false, temperature: 0.7, max_tokens: 2000 })
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
+                },
+                body: JSON.stringify(payload)
             });
-            if (!response.ok) throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`API 请求失败 (${response.status}): ${errorText}`);
+            }
+
             const data = await response.json();
-            const aiReply = data.choices[0].message.content;
-            const idxLoading = sess.messages.findIndex(m => m.loadingId === loadingId);
-            if (idxLoading !== -1) sess.messages.splice(idxLoading, 1, { role: 'assistant', content: aiReply, timestamp: getTimeLabel() });
-            renderMessagesThread();
-            updateSessionTitle(currentSessionId);
-            persistAll();
-        } catch (err) {
-            console.error(err);
-            const idxLoading = sess.messages.findIndex(m => m.loadingId === loadingId);
-            if (idxLoading !== -1) sess.messages.splice(idxLoading, 1, { role: 'assistant', content: `❌ 错误: ${err.message}`, timestamp: getTimeLabel() });
-            renderMessagesThread();
-            persistAll();
-        } finally {
-            isLoadingFlag = false;
-            sendBtn.disabled = false;
-            userInput.disabled = false;
-            userInput.focus();
+            const assistantReply = data.choices[0].message.content;
+            conversationHistory.push({ role: "assistant", content: assistantReply });
+            return assistantReply;
+
+        } catch (error) {
+            console.error('调用 DeepSeek 出错:', error);
+            return `❌ 出错了: ${error.message}`;
         }
     }
-    
-    async function onSend() {
-        if (isLoadingFlag) return;
-        const raw = userInput.value;
-        if (!raw.trim()) return;
+
+    async function handleSend() {
+        console.log("发送按钮被点击了"); // 控制台日志，用于调试
+        const question = userInput.value.trim();
+        if (!question) {
+            showToast("请输入消息");
+            return;
+        }
+
+        // 清空输入框
         userInput.value = '';
-        await sendUserMessage(raw.trim());
+        // 显示用户消息
+        addMessage(question, 'user');
+        showLoading();
+        sendBtn.disabled = true;
+        userInput.disabled = true;
+
+        const reply = await callDeepSeekAPI(question);
+
+        hideLoading();
+        addMessage(reply, 'ai');
+        sendBtn.disabled = false;
+        userInput.disabled = false;
+        userInput.focus();
     }
-    
-    userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter' && !isLoadingFlag) { e.preventDefault(); onSend(); } });
-    sendBtn.addEventListener('click', onSend);
-    newSessionBtn.addEventListener('click', newEmptySession);
-    clearChatBtn.addEventListener('click', clearCurrentSession);
-    menuToggle.addEventListener('click', () => { sidebar.classList.toggle('open'); mobileOverlay.classList.toggle('open'); });
-    mobileOverlay.addEventListener('click', () => { sidebar.classList.remove('open'); mobileOverlay.classList.remove('open'); });
-    
-    loadData();
-    renderSidebar();
-    renderMessagesThread();
-    currentTitleSpan.innerText = sessions[currentSessionId]?.title || '对话';
+
+    // 显式绑定事件
+    sendBtn.addEventListener('click', handleSend);
+    userInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleSend();
+        }
+    });
+
+    console.log("页面加载完成，事件已绑定");
 </script>
 </body>
 </html>
