@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>DeepSeek · 多会话无上限版</title>
+    <title>DeepSeek · 多会话无上限修复版</title>
     <style>
         * { box-sizing: border-box; }
         body {
@@ -15,7 +15,6 @@
             display: flex;
             overflow: hidden;
         }
-        /* 侧边栏 - 会话列表 */
         .sidebar {
             width: 280px;
             background: #1e293b;
@@ -93,7 +92,6 @@
             font-size: 1rem;
             padding: 4px 8px;
         }
-        /* 主聊天区域 */
         .main-chat {
             flex: 1;
             display: flex;
@@ -297,101 +295,152 @@
 </div>
 
 <script>
-    // ---------- 🔐 安全配置 ----------
-    const DEEPSEEK_API_KEY =sk-57d321764a9f486daa8659be78886f3f;   // ⚠️ 必须替换
-    const API_URL = 'https://api.deepseek.com/chat/completions';
-    const MODEL = 'deepseek-v4-flash';        // 最便宜
-    const COOLDOWN_MS = 5000;                 // 5秒冷却
-    const DAILY_LIMIT = 50;                   // 每日次数上限
-    const INPUT_PRICE = 1.0;   // 元/百万token
-    const OUTPUT_PRICE = 2.0;  // 元/百万token
-    const MAX_CONTEXT_PAIRS = 8;  // 限制上下文轮数（防止历史过长导致费用暴涨）
+    (function() {
+        // ---------- 🔐 安全配置 ----------
+        const DEEPSEEK_API_KEY = sk-57d321764a9f486daa8659be78886f3f;   // ⚠️ 请替换为真实Key
+        const API_URL = 'https://api.deepseek.com/chat/completions';
+        const MODEL = 'deepseek-v4-flash';
+        const COOLDOWN_MS = 5000;
+        const DAILY_LIMIT = 50;
+        const INPUT_PRICE = 1.0;
+        const OUTPUT_PRICE = 2.0;
+        const MAX_CONTEXT_PAIRS = 8;
 
-    // ---------- 多会话数据结构 ----------
-    let sessions = {};
-    let currentSessionId = null;
-    let currentSessionCost = 0;
-    let lastCallTime = 0;
-    let todayCallCount = 0;
+        // ---------- 全局变量 ----------
+        let sessions = {};
+        let currentSessionId = null;
+        let currentSessionCost = 0;
+        let lastCallTime = 0;
+        let todayCallCount = 0;
+        let loadingWrapper = null;
 
-    // DOM
-    const messagesDiv = document.getElementById('messages');
-    const userInput = document.getElementById('user-input');
-    const sendBtn = document.getElementById('send-btn');
-    const sessionsListDiv = document.getElementById('sessions-list');
-    const newSessionBtn = document.getElementById('new-session-btn');
-    const clearMsgsBtn = document.getElementById('clear-messages-btn');
-    const menuToggle = document.getElementById('menu-toggle');
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('overlay');
-    const currentTitle = document.getElementById('current-session-title');
-    const costBadge = document.getElementById('cost-badge');
-    const searchInput = document.getElementById('search-input');
-    const syncToggle = document.getElementById('sync-toggle');
+        // DOM 元素
+        const messagesDiv = document.getElementById('messages');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+        const sessionsListDiv = document.getElementById('sessions-list');
+        const newSessionBtn = document.getElementById('new-session-btn');
+        const clearMsgsBtn = document.getElementById('clear-messages-btn');
+        const menuToggle = document.getElementById('menu-toggle');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+        const currentTitle = document.getElementById('current-session-title');
+        const costBadge = document.getElementById('cost-badge');
+        const searchInput = document.getElementById('search-input');
+        const syncToggle = document.getElementById('sync-toggle');
+        const searchToggleBtn = document.getElementById('search-toggle-btn');
 
-    // 存储key
-    let storageKey = () => syncToggle.checked ? 'deepseek_multi_no_limit_sync' : 'deepseek_multi_no_limit_local_' + (navigator.userAgent.includes('Mobile') ? 'mobile' : 'desktop');
-
-    // 辅助函数
-    function showToast(msg) {
-        let t = document.createElement('div');
-        t.className = 'toast';
-        t.innerText = msg;
-        document.body.appendChild(t);
-        setTimeout(() => t.remove(), 2500);
-    }
-
-    function getCurrentTimeStr() {
-        const d = new Date();
-        return `${d.getMonth()+1}/${d.getDate()} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
-    }
-
-    function updateCostUI() {
-        costBadge.innerText = `💰 本次 ${currentSessionCost.toFixed(5)} 元`;
-    }
-
-    function estimateTokens(text) {
-        const chinese = (text.match(/[\u4e00-\u9fa5]/g) || []).length;
-        const other = text.replace(/[\u4e00-\u9fa5]/g, '').length;
-        return Math.ceil(chinese * 1.5 + other * 0.7);
-    }
-
-    // ---------- 数据持久化 ----------
-    function saveAllSessions() {
-        const key = storageKey();
-        localStorage.setItem(key, JSON.stringify(sessions));
-        if (currentSessionId) {
-            localStorage.setItem(key + '_current', currentSessionId);
+        // 辅助函数
+        function showToast(msg) {
+            let t = document.createElement('div');
+            t.className = 'toast';
+            t.innerText = msg;
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 2500);
         }
-    }
 
-    function loadAllSessions() {
-        const key = storageKey();
-        const raw = localStorage.getItem(key);
-        if (raw) {
-            sessions = JSON.parse(raw);
+        function getCurrentTimeStr() {
+            const d = new Date();
+            return `${d.getMonth()+1}/${d.getDate()} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
         }
-        if (Object.keys(sessions).length === 0) {
-            const id = Date.now().toString();
-            sessions[id] = {
-                id: id,
-                title: '新对话',
-                messages: [{ role: 'assistant', content: '你好！我是 DeepSeek 多会话版，无输出上限，每条消息带时间戳。', timestamp: getCurrentTimeStr() }],
-                createdAt: id
-            };
-            currentSessionId = id;
-        } else {
-            const lastId = localStorage.getItem(key + '_current');
-            if (lastId && sessions[lastId]) currentSessionId = lastId;
-            else currentSessionId = Object.keys(sessions)[0];
-        }
-        saveAllSessions();
-    }
 
-    function saveCurrentSession() {
-        const session = sessions[currentSessionId];
-        if (session) {
-            // 从DOM重建messages（保留时间戳）
+        function updateCostUI() {
+            costBadge.innerText = `💰 本次 ${currentSessionCost.toFixed(5)} 元`;
+        }
+
+        function estimateTokens(text) {
+            const chinese = (text.match(/[\u4e00-\u9fa5]/g) || []).length;
+            const other = text.replace(/[\u4e00-\u9fa5]/g, '').length;
+            return Math.ceil(chinese * 1.5 + other * 0.7);
+        }
+
+        // 存储管理
+        function getStorageKey() {
+            return syncToggle.checked ? 'deepseek_multi_no_limit_sync' : 'deepseek_multi_no_limit_local_' + (navigator.userAgent.includes('Mobile') ? 'mobile' : 'desktop');
+        }
+
+        function saveAllSessions() {
+            const key = getStorageKey();
+            localStorage.setItem(key, JSON.stringify(sessions));
+            if (currentSessionId) {
+                localStorage.setItem(key + '_current', currentSessionId);
+            }
+        }
+
+        function loadAllSessions() {
+            const key = getStorageKey();
+            const raw = localStorage.getItem(key);
+            if (raw) {
+                sessions = JSON.parse(raw);
+            }
+            if (Object.keys(sessions).length === 0) {
+                const id = Date.now().toString();
+                sessions[id] = {
+                    id: id,
+                    title: '新对话',
+                    messages: [{ role: 'assistant', content: '你好！我是 DeepSeek 多会话版，无输出上限，每条消息带时间戳。', timestamp: getCurrentTimeStr() }],
+                    createdAt: id
+                };
+                currentSessionId = id;
+            } else {
+                const lastId = localStorage.getItem(key + '_current');
+                if (lastId && sessions[lastId]) currentSessionId = lastId;
+                else currentSessionId = Object.keys(sessions)[0];
+            }
+            saveAllSessions();
+        }
+
+        // 渲染会话列表
+        function renderSessionsList() {
+            const sorted = Object.values(sessions).sort((a,b) => b.createdAt - a.createdAt);
+            sessionsListDiv.innerHTML = '';
+            for (let s of sorted) {
+                const div = document.createElement('div');
+                div.className = 'session-item';
+                if (s.id === currentSessionId) div.classList.add('active');
+                div.innerHTML = `<span class="session-title">${escapeHtml(s.title)}</span><button class="delete-session-btn" data-id="${s.id}">🗑️</button>`;
+                div.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('delete-session-btn')) return;
+                    switchSession(s.id);
+                });
+                const delBtn = div.querySelector('.delete-session-btn');
+                delBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    deleteSession(s.id);
+                });
+                sessionsListDiv.appendChild(div);
+            }
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        // 添加消息到 UI，option 控制是否自动保存到 sessions
+        function addMessageToUI(content, role, timestamp, shouldSave = true) {
+            const wrapper = document.createElement('div');
+            wrapper.className = `message-wrapper ${role === 'user' ? 'user-wrapper' : 'ai-wrapper'}`;
+            const bubble = document.createElement('div');
+            bubble.className = `message ${role === 'user' ? 'user-message' : 'ai-message'}`;
+            bubble.innerText = content;
+            const timeSpan = document.createElement('div');
+            timeSpan.className = 'timestamp';
+            timeSpan.innerText = timestamp;
+            wrapper.appendChild(bubble);
+            wrapper.appendChild(timeSpan);
+            messagesDiv.appendChild(wrapper);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            if (shouldSave) {
+                saveCurrentSessionFromDOM();
+            }
+        }
+
+        // 将当前 DOM 消息保存到 sessions 中
+        function saveCurrentSessionFromDOM() {
+            const session = sessions[currentSessionId];
+            if (!session) return;
             const wrappers = document.querySelectorAll('#messages .message-wrapper');
             const msgs = [];
             for (let w of wrappers) {
@@ -407,7 +456,7 @@
                 }
             }
             session.messages = msgs;
-            // 更新标题（取第一条用户消息）
+            // 更新标题
             const firstUser = msgs.find(m => m.role === 'user');
             if (firstUser) {
                 let title = firstUser.content.slice(0, 20);
@@ -417,291 +466,245 @@
                 session.title = '新对话';
             }
             saveAllSessions();
-        }
-    }
-
-    function renderSessionsList() {
-        const sorted = Object.values(sessions).sort((a,b) => b.createdAt - a.createdAt);
-        sessionsListDiv.innerHTML = '';
-        for (let s of sorted) {
-            const div = document.createElement('div');
-            div.className = 'session-item';
-            if (s.id === currentSessionId) div.classList.add('active');
-            div.innerHTML = `<span class="session-title">${escapeHtml(s.title)}</span><button class="delete-session-btn" data-id="${s.id}">🗑️</button>`;
-            div.addEventListener('click', (e) => {
-                if (e.target.classList.contains('delete-session-btn')) return;
-                switchSession(s.id);
-            });
-            const delBtn = div.querySelector('.delete-session-btn');
-            delBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                deleteSession(s.id);
-            });
-            sessionsListDiv.appendChild(div);
-        }
-    }
-
-    function escapeHtml(str) {
-        const div = document.createElement('div');
-        div.textContent = str;
-        return div.innerHTML;
-    }
-
-    function switchSession(sessionId) {
-        if (!sessions[sessionId]) return;
-        // 保存当前会话
-        saveCurrentSession();
-        currentSessionId = sessionId;
-        currentSessionCost = 0;
-        updateCostUI();
-        // 加载会话消息到界面
-        const session = sessions[currentSessionId];
-        messagesDiv.innerHTML = '';
-        for (let msg of session.messages) {
-            addMessageToUI(msg.content, msg.role, msg.timestamp, false); // false表示不自动保存（避免循环）
-        }
-        currentTitle.innerText = session.title;
-        renderSessionsList();
-        if (window.innerWidth <= 640) {
-            sidebar.classList.remove('open');
-            overlay.classList.remove('open');
-        }
-    }
-
-    function deleteSession(sessionId) {
-        if (Object.keys(sessions).length === 1) {
-            showToast('至少保留一个对话');
-            return;
-        }
-        delete sessions[sessionId];
-        if (currentSessionId === sessionId) {
-            currentSessionId = Object.keys(sessions)[0];
-            switchSession(currentSessionId);
-        } else {
             renderSessionsList();
+            currentTitle.innerText = session.title;
         }
-        saveAllSessions();
-    }
 
-    function newSession() {
-        saveCurrentSession();
-        const id = Date.now().toString();
-        sessions[id] = {
-            id: id,
-            title: '新对话',
-            messages: [{ role: 'assistant', content: '你好！我是 DeepSeek 多会话版，无输出上限。', timestamp: getCurrentTimeStr() }],
-            createdAt: id
-        };
-        currentSessionId = id;
-        currentSessionCost = 0;
-        updateCostUI();
-        messagesDiv.innerHTML = '';
-        addMessageToUI('你好！我是 DeepSeek 多会话版，无输出上限。', 'assistant', getCurrentTimeStr(), false);
-        currentTitle.innerText = '新对话';
-        renderSessionsList();
-        saveAllSessions();
-    }
-
-    function clearCurrentMessages() {
-        if (!confirm('清空当前对话的所有消息？')) return;
-        const session = sessions[currentSessionId];
-        if (session) {
-            session.messages = [{ role: 'assistant', content: '对话已清空，开始新话题吧。', timestamp: getCurrentTimeStr() }];
+        // 加载指定会话的消息到 DOM
+        function loadSessionToDOM(sessionId) {
+            const session = sessions[sessionId];
+            if (!session) return;
             messagesDiv.innerHTML = '';
-            addMessageToUI(session.messages[0].content, 'assistant', session.messages[0].timestamp, false);
+            for (let msg of session.messages) {
+                addMessageToUI(msg.content, msg.role, msg.timestamp, false);
+            }
+        }
+
+        function switchSession(sessionId) {
+            if (!sessions[sessionId]) return;
+            // 保存当前会话
+            saveCurrentSessionFromDOM();
+            currentSessionId = sessionId;
             currentSessionCost = 0;
             updateCostUI();
+            loadSessionToDOM(currentSessionId);
+            currentTitle.innerText = sessions[currentSessionId].title;
+            renderSessionsList();
+            if (window.innerWidth <= 640) {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('open');
+            }
+        }
+
+        function deleteSession(sessionId) {
+            if (Object.keys(sessions).length === 1) {
+                showToast('至少保留一个对话');
+                return;
+            }
+            delete sessions[sessionId];
+            if (currentSessionId === sessionId) {
+                currentSessionId = Object.keys(sessions)[0];
+                loadSessionToDOM(currentSessionId);
+                currentSessionCost = 0;
+                updateCostUI();
+                currentTitle.innerText = sessions[currentSessionId].title;
+            }
             saveAllSessions();
             renderSessionsList();
         }
-    }
 
-    function addMessageToUI(content, role, timestamp, shouldSave = true) {
-        const wrapper = document.createElement('div');
-        wrapper.className = `message-wrapper ${role === 'user' ? 'user-wrapper' : 'ai-wrapper'}`;
-        const bubble = document.createElement('div');
-        bubble.className = `message ${role === 'user' ? 'user-message' : 'ai-message'}`;
-        bubble.innerText = content;
-        const timeSpan = document.createElement('div');
-        timeSpan.className = 'timestamp';
-        timeSpan.innerText = timestamp;
-        wrapper.appendChild(bubble);
-        wrapper.appendChild(timeSpan);
-        messagesDiv.appendChild(wrapper);
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        if (shouldSave) saveCurrentSession();
-    }
-
-    let loadingWrapper = null;
-    function showLoading() {
-        if (loadingWrapper) loadingWrapper.remove();
-        loadingWrapper = document.createElement('div');
-        loadingWrapper.className = 'message-wrapper ai-wrapper';
-        const bubble = document.createElement('div');
-        bubble.className = 'message ai-message';
-        bubble.innerText = '🤔 思考中...';
-        const timeSpan = document.createElement('div');
-        timeSpan.className = 'timestamp';
-        timeSpan.innerText = getCurrentTimeStr();
-        loadingWrapper.appendChild(bubble);
-        loadingWrapper.appendChild(timeSpan);
-        messagesDiv.appendChild(loadingWrapper);
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    }
-    function hideLoading() {
-        if (loadingWrapper) { loadingWrapper.remove(); loadingWrapper = null; }
-    }
-
-    async function callDeepSeek(userQuestion) {
-        const now = Date.now();
-        if (now - lastCallTime < COOLDOWN_MS) {
-            throw new Error(`请等待 ${Math.ceil((COOLDOWN_MS - (now - lastCallTime))/1000)} 秒后再发送`);
-        }
-        const todayKey = `call_limit_${new Date().toISOString().slice(0,10)}`;
-        let stored = localStorage.getItem(todayKey);
-        todayCallCount = stored ? parseInt(stored,10) : 0;
-        if (todayCallCount >= DAILY_LIMIT) {
-            throw new Error(`今日已达最大调用次数 ${DAILY_LIMIT} 次，请明天再使用。`);
+        function newSession() {
+            saveCurrentSessionFromDOM();
+            const id = Date.now().toString();
+            sessions[id] = {
+                id: id,
+                title: '新对话',
+                messages: [{ role: 'assistant', content: '你好！我是 DeepSeek 多会话版，无输出上限。', timestamp: getCurrentTimeStr() }],
+                createdAt: id
+            };
+            currentSessionId = id;
+            currentSessionCost = 0;
+            updateCostUI();
+            loadSessionToDOM(currentSessionId);
+            currentTitle.innerText = '新对话';
+            renderSessionsList();
+            saveAllSessions();
         }
 
-        // 获取当前会话最近 MAX_CONTEXT_PAIRS 轮消息作为上下文
-        const session = sessions[currentSessionId];
-        let history = [];
-        if (session && session.messages.length > 0) {
-            // 取最后 MAX_CONTEXT_PAIRS*2 条消息（用户+AI成对）
-            let msgs = session.messages.slice(-MAX_CONTEXT_PAIRS*2);
-            for (let m of msgs) {
-                if (m.role !== 'system') {
-                    history.push({ role: m.role, content: m.content });
-                }
+        function clearCurrentMessages() {
+            if (!confirm('清空当前对话的所有消息？')) return;
+            const session = sessions[currentSessionId];
+            if (session) {
+                session.messages = [{ role: 'assistant', content: '对话已清空，开始新话题吧。', timestamp: getCurrentTimeStr() }];
+                loadSessionToDOM(currentSessionId);
+                currentSessionCost = 0;
+                updateCostUI();
+                saveAllSessions();
+                renderSessionsList();
             }
         }
-        const messages = [
-            { role: 'system', content: '你是稳定的助手，请完整回答用户问题，不要截断回复。' },
-            ...history
-        ];
-        const inputText = JSON.stringify(messages);
-        const estInputTokens = estimateTokens(inputText);
-        const estOutputGuess = 2000; // 预估输出，实际可能更高
-        const estCost = (estInputTokens / 1e6 * INPUT_PRICE) + (estOutputGuess / 1e6 * OUTPUT_PRICE);
-        if (!confirm(`⚠️ 无输出上限提醒：预估费用约 ${estCost.toFixed(5)} 元（实际取决于AI回复长度）。\n确认发送？`)) {
-            throw new Error('用户取消发送');
+
+        // 加载/隐藏思考中
+        function showLoading() {
+            if (loadingWrapper) loadingWrapper.remove();
+            loadingWrapper = document.createElement('div');
+            loadingWrapper.className = 'message-wrapper ai-wrapper';
+            const bubble = document.createElement('div');
+            bubble.className = 'message ai-message';
+            bubble.innerText = '🤔 思考中...';
+            const timeSpan = document.createElement('div');
+            timeSpan.className = 'timestamp';
+            timeSpan.innerText = getCurrentTimeStr();
+            loadingWrapper.appendChild(bubble);
+            loadingWrapper.appendChild(timeSpan);
+            messagesDiv.appendChild(loadingWrapper);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+        function hideLoading() {
+            if (loadingWrapper) { loadingWrapper.remove(); loadingWrapper = null; }
         }
 
-        lastCallTime = Date.now();
-        const payload = {
-            model: MODEL,
-            messages: messages,
-            temperature: 0.7,
-            stream: false
-        };
+        // API 调用
+        async function callDeepSeek(userQuestion) {
+            const now = Date.now();
+            if (now - lastCallTime < COOLDOWN_MS) {
+                throw new Error(`请等待 ${Math.ceil((COOLDOWN_MS - (now - lastCallTime))/1000)} 秒后再发送`);
+            }
+            const todayKey = `call_limit_${new Date().toISOString().slice(0,10)}`;
+            let stored = localStorage.getItem(todayKey);
+            todayCallCount = stored ? parseInt(stored,10) : 0;
+            if (todayCallCount >= DAILY_LIMIT) {
+                throw new Error(`今日已达最大调用次数 ${DAILY_LIMIT} 次，请明天再使用。`);
+            }
 
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
-            },
-            body: JSON.stringify(payload)
+            // 获取当前会话最近 MAX_CONTEXT_PAIRS 轮消息
+            const sessionData = sessions[currentSessionId];
+            let history = [];
+            if (sessionData && sessionData.messages) {
+                let msgs = sessionData.messages.slice(-MAX_CONTEXT_PAIRS*2);
+                for (let m of msgs) {
+                    if (m.role !== 'system') {
+                        history.push({ role: m.role, content: m.content });
+                    }
+                }
+            }
+            const messagesPayload = [
+                { role: 'system', content: '你是稳定的助手，请完整回答用户问题，不要截断回复。' },
+                ...history
+            ];
+            const inputText = JSON.stringify(messagesPayload);
+            const estInputTokens = estimateTokens(inputText);
+            const estOutputGuess = 2000;
+            const estCost = (estInputTokens / 1e6 * INPUT_PRICE) + (estOutputGuess / 1e6 * OUTPUT_PRICE);
+            if (!confirm(`⚠️ 无输出上限提醒：预估费用约 ${estCost.toFixed(5)} 元（实际取决于AI回复长度）。\n确认发送？`)) {
+                throw new Error('用户取消发送');
+            }
+
+            lastCallTime = Date.now();
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
+                },
+                body: JSON.stringify({ model: MODEL, messages: messagesPayload, temperature: 0.7, stream: false })
+            });
+            if (!response.ok) {
+                const errText = await response.text();
+                throw new Error(`API错误(${response.status}): ${errText}`);
+            }
+            const data = await response.json();
+            const reply = data.choices[0].message.content;
+            const usedTokens = data.usage?.completion_tokens || estimateTokens(reply);
+            const actualCost = (estInputTokens / 1e6 * INPUT_PRICE) + (usedTokens / 1e6 * OUTPUT_PRICE);
+            currentSessionCost += actualCost;
+            updateCostUI();
+
+            todayCallCount++;
+            localStorage.setItem(todayKey, todayCallCount);
+            return reply;
+        }
+
+        async function handleSend() {
+            const question = userInput.value.trim();
+            if (!question) return;
+            const userTime = getCurrentTimeStr();
+            addMessageToUI(question, 'user', userTime, true);
+            userInput.value = '';
+            sendBtn.disabled = true;
+            showLoading();
+            try {
+                const reply = await callDeepSeek(question);
+                hideLoading();
+                const aiTime = getCurrentTimeStr();
+                addMessageToUI(reply, 'assistant', aiTime, true);
+            } catch (err) {
+                hideLoading();
+                const errTime = getCurrentTimeStr();
+                addMessageToUI(`❌ 调用失败: ${err.message}`, 'assistant', errTime, true);
+                showToast(err.message);
+            } finally {
+                sendBtn.disabled = false;
+                userInput.focus();
+            }
+        }
+
+        function performSearch() {
+            const keyword = searchInput.value.trim().toLowerCase();
+            if (!keyword) return;
+            let results = [];
+            for (let sid in sessions) {
+                const s = sessions[sid];
+                for (let msg of s.messages) {
+                    if (msg.content.toLowerCase().includes(keyword)) {
+                        results.push({ sid: sid, title: s.title, preview: msg.content.slice(0, 60) });
+                        break; // 一个会话只显示一次
+                    }
+                }
+            }
+            if (results.length === 0) {
+                showToast('未找到匹配内容');
+            } else {
+                // 跳转到第一个结果
+                const first = results[0];
+                switchSession(first.sid);
+                showToast(`找到 ${results.length} 条结果，已跳转到「${first.title}」`);
+            }
+        }
+
+        // 事件绑定
+        sendBtn.addEventListener('click', handleSend);
+        userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSend(); });
+        newSessionBtn.addEventListener('click', newSession);
+        clearMsgsBtn.addEventListener('click', clearCurrentMessages);
+        menuToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('open');
         });
-        if (!response.ok) {
-            const errText = await response.text();
-            throw new Error(`API错误(${response.status}): ${errText}`);
-        }
-        const data = await response.json();
-        const reply = data.choices[0].message.content;
-        const usedTokens = data.usage?.completion_tokens || estimateTokens(reply);
-        const actualCost = (estInputTokens / 1e6 * INPUT_PRICE) + (usedTokens / 1e6 * OUTPUT_PRICE);
-        currentSessionCost += actualCost;
+        overlay.addEventListener('click', () => {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('open');
+        });
+        searchToggleBtn.addEventListener('click', () => { searchInput.focus(); });
+        searchInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') performSearch(); });
+        syncToggle.addEventListener('change', () => {
+            loadAllSessions();
+            switchSession(currentSessionId);
+            showToast(syncToggle.checked ? '已开启跨设备同步' : '已关闭同步，仅本设备保存');
+        });
+
+        // 初始化
+        loadAllSessions();
+        renderSessionsList();
+        loadSessionToDOM(currentSessionId);
+        currentTitle.innerText = sessions[currentSessionId].title;
         updateCostUI();
 
-        todayCallCount++;
-        localStorage.setItem(todayKey, todayCallCount);
-        return reply;
-    }
-
-    async function handleSend() {
-        const question = userInput.value.trim();
-        if (!question) return;
-        const userTime = getCurrentTimeStr();
-        addMessageToUI(question, 'user', userTime, true);
-        userInput.value = '';
-        sendBtn.disabled = true;
-        showLoading();
-        try {
-            const reply = await callDeepSeek(question);
-            hideLoading();
-            const aiTime = getCurrentTimeStr();
-            addMessageToUI(reply, 'assistant', aiTime, true);
-        } catch (err) {
-            hideLoading();
-            const errTime = getCurrentTimeStr();
-            addMessageToUI(`❌ 调用失败: ${err.message}`, 'assistant', errTime, true);
-            showToast(err.message);
-        } finally {
-            sendBtn.disabled = false;
-            userInput.focus();
-        }
-    }
-
-    // 搜索功能简化（跨会话搜索）
-    function performSearch() {
-        const keyword = searchInput.value.trim().toLowerCase();
-        if (!keyword) return;
-        let results = [];
-        for (let sid in sessions) {
-            const s = sessions[sid];
-            for (let idx in s.messages) {
-                const msg = s.messages[idx];
-                if (msg.content.toLowerCase().includes(keyword)) {
-                    results.push({ sid: sid, title: s.title, content: msg.content, role: msg.role, timestamp: msg.timestamp });
-                }
-            }
-        }
-        if (results.length === 0) {
-            showToast('未找到匹配内容');
-        } else {
-            // 简单展示第一个结果并切换会话
-            const first = results[0];
-            switchSession(first.sid);
-            showToast(`找到 ${results.length} 条结果，已跳转到第一个`);
-        }
-    }
-
-    // 事件绑定
-    sendBtn.addEventListener('click', handleSend);
-    userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSend(); });
-    newSessionBtn.addEventListener('click', newSession);
-    clearMsgsBtn.addEventListener('click', clearCurrentMessages);
-    menuToggle.addEventListener('click', () => {
-        sidebar.classList.toggle('open');
-        overlay.classList.toggle('open');
-    });
-    overlay.addEventListener('click', () => {
-        sidebar.classList.remove('open');
-        overlay.classList.remove('open');
-    });
-    searchInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') performSearch(); });
-    document.getElementById('search-toggle-btn').addEventListener('click', () => {
-        searchInput.focus();
-    });
-    syncToggle.addEventListener('change', () => {
-        loadAllSessions();
-        switchSession(currentSessionId);
-        showToast(syncToggle.checked ? '已开启跨设备同步' : '已关闭同步，仅本设备保存');
-    });
-
-    // 初始化
-    loadAllSessions();
-    renderSessionsList();
-    switchSession(currentSessionId);
-    updateCostUI();
-
-    // 每日次数恢复
-    const tdKey = `call_limit_${new Date().toISOString().slice(0,10)}`;
-    let storedToday = localStorage.getItem(tdKey);
-    if (storedToday) todayCallCount = parseInt(storedToday,10);
-    showToast(`今日剩余调用次数：${DAILY_LIMIT - todayCallCount}`);
+        const tdKey = `call_limit_${new Date().toISOString().slice(0,10)}`;
+        let storedToday = localStorage.getItem(tdKey);
+        if (storedToday) todayCallCount = parseInt(storedToday,10);
+        showToast(`今日剩余调用次数：${DAILY_LIMIT - todayCallCount}`);
+    })();
 </script>
 </body>
 </html>
